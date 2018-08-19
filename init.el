@@ -1,3 +1,5 @@
+(setq gc-cons-threshold 20000000)
+
 ;; Initialize package system
 (setq package-enable-at-startup nil)
 (setq default-directory "~/.emacs.d/")
@@ -15,8 +17,11 @@
 
 (load-theme 'dracula t)
 
-(use-package magit
-  :config (setq magit-save-repository-buffers 'dontask))
+(require 'editor-features)
+
+(require 'experimental-languages)
+
+(require 'haskell)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; custom variables
@@ -26,7 +31,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (magit dracula-theme darktooth-theme use-package))))
+ '(package-selected-packages
+   (quote
+    (purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
