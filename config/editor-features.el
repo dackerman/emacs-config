@@ -19,6 +19,10 @@
   :config
   (helm-projectile-on))
 
+(use-package fzf
+  :config
+  (global-set-key (kbd "C-c C-f") 'fzf-projectile))
+
 (use-package magit
   :bind (("C-c m s" . magit-status))
   :config (setq magit-save-repository-buffers 'dontask))
