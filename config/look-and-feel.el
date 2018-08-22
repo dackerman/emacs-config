@@ -21,4 +21,8 @@
 (set-default 'show-trailing-whitespace t)
 (set-face-background 'trailing-whitespace "pink")
 
+;; font
+(set-face-attribute 'default nil :font global-font-face)
+(set-frame-font global-font-face nil t)
+
 (provide 'look-and-feel)

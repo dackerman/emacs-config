@@ -12,6 +12,8 @@
 
 (require 'use-package)
 
+(require 'machine-config)
+
 (require 'look-and-feel)
 
 (require 'editor-features)
