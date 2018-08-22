@@ -10,18 +10,17 @@
 (add-to-list 'package-archives (cons "melpa" "https://melpa.org/packages/") t)
 (package-initialize)
 
-(eval-when-compile
-  (require 'use-package))
+(require 'use-package)
 
 (require 'look-and-feel)
-
-(load-theme 'dracula t)
 
 (require 'editor-features)
 
 (require 'experimental-languages)
 
 (require 'haskell)
+
+(load-theme 'dracula t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; custom variables

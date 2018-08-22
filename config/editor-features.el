@@ -1,4 +1,3 @@
-
 (use-package projectile
   :init
   (setq projectile-indexing-method 'alien)
@@ -21,7 +20,7 @@
   (helm-projectile-on))
 
 (use-package magit
-  :config (setq magit-save-repository-buffers 'dontask)
-  :bind (("C-c m s" . magit-status)))
+  :bind (("C-c m s" . magit-status))
+  :config (setq magit-save-repository-buffers 'dontask))
 
 (provide 'editor-features)
