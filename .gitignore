@@ -6,3 +6,5 @@
 /config/machine-config.el
 /packages
 /url
+/tramp
+/transient

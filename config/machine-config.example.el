@@ -1,5 +1,5 @@
-;; copy this example file to machine-config.el and tweak it
-
-(setq global-font-face "Hack-13") ; main font face
-
-(provide 'machine-config)
+;; Copy this example file to machine-config.el and select the platform you're on
+(setq machine-platform 'linux)
+;; Other possible platforms
+;; (setq machine-platform 'windows)
+;; (setq machine-platform 'mac)
