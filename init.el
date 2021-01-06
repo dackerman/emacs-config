@@ -1,9 +1,7 @@
 (setq gc-cons-threshold 20000000)
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun package-setup ()
   (setq package-enable-at-startup nil)
   (setq default-directory "~/.emacs.d/")
@@ -12,14 +10,11 @@
 
   (require 'package)
   (add-to-list 'package-archives (cons "melpa" "https://melpa.org/packages/") t)
-  (package-initialize)
-  (require 'use-package))
+  (package-initialize))
 (package-setup)
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Platform Config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun run-platform-config (platform)
   (cond
    ((eq platform 'linux)
@@ -29,9 +24,7 @@
 (set 'platform-config (run-platform-config machine-platform))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
@@ -39,7 +32,8 @@
   (column-number-mode t)
   (global-linum-mode 1)
   (show-paren-mode 1)
-
+  (global-unset-key (kbd "C-z"))
+  
   (setq-default indent-tabs-mode nil) ; tabs to spaces
   (setq inhibit-startup-message t
         inhibit-startup-echo-area-message t
@@ -50,7 +44,9 @@
         auto-save-file-name-transforms (progn
                                          (make-directory "~/.emacs.d/auto-save-files/" t)
                                          `((".*" "~/.emacs.d/auto-save-files/" t)))
+        backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
         make-backup-files nil
+        create-lockfiles nil
         )
   (set-default 'truncate-lines t)
   (set-face-background 'trailing-whitespace "pink")
@@ -59,11 +55,8 @@
   (set-face-attribute 'default nil :font (alist-get 'global-font-face platform-config))
   (set-frame-font (alist-get 'global-font-face platform-config) nil t)
   )
-(look-and-feel)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun editor-features ()
   (use-package projectile
@@ -94,68 +87,76 @@
   (use-package magit
     :bind (("C-c m s" . magit-status))
     :config (setq magit-save-repository-buffers 'dontask)))
-(editor-features)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun programming-languages ()
-  (defun rust ()
-    (use-package rust-mode
-      :defer t
-      :mode "\\.rs\\'"))
-  (rust)
+(defun rust ()
+  (use-package rust-mode
+    :defer t
+    :mode "\\.rs\\'"))
 
-  (defun purescript ()
-    (use-package purescript-mode
-      :defer t
-      :init
-      (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)))
-  (purescript)
+(defun clojure ()
+  (use-package cider))
 
-  (defun haskell ()
-    (defun haskell-save-hook ()
-      (message "haskell save hook running")
-      (haskell-align-imports)
-      (haskell-sort-imports)
-      (delete-trailing-whitespace))
-    
-    (defun my-haskell-hook ()
-      (message "haskell hook")
-      (add-hook 'before-save-hook 'haskell-save-hook))
+(defun purescript ()
+  (use-package purescript-mode
+    :defer t
+    :init
+    (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)))
 
-    (use-package intero
-      :config
-      (message "configuring intero")
-      (add-hook 'haskell-mode-hook 'intero-mode))
+(defun haskell ()
+  (defun haskell-save-hook ()
+    (message "haskell save hook running")
+    (haskell-align-imports)
+    (haskell-sort-imports)
+    (delete-trailing-whitespace))
+  
+  (defun my-haskell-hook ()
+    (message "haskell hook")
+    (add-hook 'before-save-hook 'haskell-save-hook))
 
-    (use-package haskell-mode)
+  (use-package intero
+    :config
+    (message "configuring intero")
+    (add-hook 'haskell-mode-hook 'intero-mode))
 
-    (message "setting haskell-mode-hook ")
-    (add-hook 'haskell-mode-hook 'my-haskell-hook))
-  (haskell)
+  (use-package haskell-mode)
 
-  (defun ruby ()
-    (use-package ruby-mode
-      :config
-      (defun my-ruby-mode-hook ()
-        (set-fill-column 80)
-        (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local)
-        (setq ruby-insert-encoding-magic-comment nil))
-      (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)))
-  (ruby)
+  (message "setting haskell-mode-hook ")
+  (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
-  (defun javascript ()
-    (use-package rjsx-mode)
-    (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
-  (javascript))
-(programming-languages)
+(defun ruby ()
+  (use-package ruby-mode
+    :config
+    (defun my-ruby-mode-hook ()
+      (set-fill-column 80)
+      (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local)
+      (setq ruby-insert-encoding-magic-comment nil))
+    (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)))
 
-(load-theme 'dracula t)
+(defun javascript ()
+  (use-package rjsx-mode)
+  (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; custom variables
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun typescript ()
+  (use-package typescript-mode))
+
+;; Selection of features. Comment out a section to prevent it from running
+(defun initialize-user-config ()
+  (require 'use-package)
+  (look-and-feel)
+  (editor-features)
+  (load-theme 'dracula t)
+  ;; (clojure)
+  ;; (rust)
+  ;; (purescript)
+  ;; (haskell)
+  ;; (ruby)
+  (javascript)
+  (typescript)
+  )
+
+;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -163,22 +164,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (yaml-mode
-     rjsx-mode
-     web-mode
-     exec-path-from-shell
-     purescript-mode
-     rust-mode
-     intero
-     haskell-mode
-     helm-projectile
-     helm
-     projectile
-     fzf
-     magit
-     dracula-theme
-     darktooth-theme
-     use-package)))
+    (rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package)))
  '(safe-local-variable-values
    (quote
     ((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
@@ -190,3 +176,14 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(defun sync-packages ()
+  (interactive)
+  (package-install-selected-packages)
+  (initialize-user-config)
+  )
+
+;; Only initializes user config/packages if things are installed.
+(if (not (null (seq-drop-while (lambda (elt) (package-installed-p elt)) package-selected-packages)))
+    (message "Some packages aren't installed. Run sync-packages to install them")
+  (initialize-user-config))
