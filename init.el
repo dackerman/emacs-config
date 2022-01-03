@@ -18,10 +18,12 @@
 (defun run-platform-config (platform)
   (cond
    ((eq platform 'linux)
-    '((global-font-face . "Hack-13")) ; main font face
+    '((global-font-face . "Hack-8")) ; main font face
     )))
 (load "~/.emacs.d/config/machine-config.el")
 (set 'platform-config (run-platform-config machine-platform))
+
+
 
 
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -141,20 +143,36 @@
 (defun typescript ()
   (use-package typescript-mode))
 
+(defun nixos ()
+  (use-package nix-mode))
+
 ;; Selection of features. Comment out a section to prevent it from running
 (defun initialize-user-config ()
   (require 'use-package)
   (look-and-feel)
   (editor-features)
   (load-theme 'dracula t)
-  ;; (clojure)
+  (clojure)
   ;; (rust)
   ;; (purescript)
   ;; (haskell)
   ;; (ruby)
   (javascript)
-  (typescript)
+  ;; (typescript)
+  (nixos)
   )
+
+(defun open-nixos-config ()
+  (interactive)
+  (switch-to-buffer
+   (find-file-noselect
+    "/home/david/code/nixos-config/etc/nixos/configuration.nix")))
+
+(defun open-emacs-config ()
+  (interactive)
+  (switch-to-buffer
+   (find-file-noselect
+    "/home/david/.emacs.d/init.el")))
 
 ;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (custom-set-variables
@@ -163,13 +181,11 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   (quote
-    (rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package)))
+   '(nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(safe-local-variable-values
-   (quote
-    ((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
+   '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
-     (haskell-indent-spaces . 4)))))
+     (haskell-indent-spaces . 4))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -183,7 +199,5 @@
   (initialize-user-config)
   )
 
-;; Only initializes user config/packages if things are installed.
-(if (not (null (seq-drop-while (lambda (elt) (package-installed-p elt)) package-selected-packages)))
-    (message "Some packages aren't installed. Run sync-packages to install them")
-  (initialize-user-config))
+; Initialize
+(initialize-user-config)
