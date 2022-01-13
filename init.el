@@ -67,6 +67,7 @@
     (setq projectile-use-git-grep t)
     (setq helm-projectile-fuzzy-match nil)
     (setq projectile-tags-command "/usr/local/bin/ctags -Re -f \"%s\" %s")
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)
     :config
     (projectile-mode +1)
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
@@ -138,6 +139,7 @@
 
 (defun javascript ()
   (use-package rjsx-mode)
+  (setq js-indent-level 2)
   (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
 
 (defun typescript ()
@@ -157,7 +159,7 @@
   ;; (purescript)
   ;; (haskell)
   ;; (ruby)
-  (javascript)
+ (javascript)
   ;; (typescript)
   (nixos)
   )
