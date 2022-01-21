@@ -18,7 +18,7 @@
 (defun run-platform-config (platform)
   (cond
    ((eq platform 'linux)
-    '((global-font-face . "Hack-8")) ; main font face
+    '((global-font-face . "Hack-12")) ; main font face
     )))
 (load "~/.emacs.d/config/machine-config.el")
 (set 'platform-config (run-platform-config machine-platform))
@@ -35,7 +35,7 @@
   (global-linum-mode 1)
   (show-paren-mode 1)
   (global-unset-key (kbd "C-z"))
-  
+
   (setq-default indent-tabs-mode nil) ; tabs to spaces
   (setq inhibit-startup-message t
         inhibit-startup-echo-area-message t
@@ -113,7 +113,7 @@
     (haskell-align-imports)
     (haskell-sort-imports)
     (delete-trailing-whitespace))
-  
+
   (defun my-haskell-hook ()
     (message "haskell hook")
     (add-hook 'before-save-hook 'haskell-save-hook))
@@ -183,7 +183,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
