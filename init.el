@@ -1,5 +1,6 @@
 (setq gc-cons-threshold 20000000)
 
+(server-start)
 
 ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun package-setup ()
@@ -54,8 +55,11 @@
   (set-face-background 'trailing-whitespace "pink")
 
   ;; font
-  (set-face-attribute 'default nil :font (alist-get 'global-font-face platform-config))
-  (set-frame-font (alist-get 'global-font-face platform-config) nil t)
+  ;(set-face-attribute 'default nil :font (alist-get 'global-font-face platform-config))
+  ;(set-frame-font (alist-get 'global-font-face platform-config) nil t)
+  (add-to-list 'default-frame-alist `(font . ,(alist-get 'global-font-face platform-config)))
+
+  (list 'font "SF Mono-14")
   )
 
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
