@@ -164,6 +164,17 @@
   (nixos)
   )
 
+(defun rename-file-and-buffer (new-name)
+  (interactive "fRename to:")
+  (rename-file (buffer-file-name) new-name)
+  (kill-buffer)
+  (find-file new-name))
+
+(defun delete-file-and-buffer ()
+  (interactive)
+  (delete-file (buffer-file-name))
+  (kill-buffer))
+
 (defun open-nixos-config ()
   (interactive)
   (switch-to-buffer
