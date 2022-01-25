@@ -77,6 +77,10 @@
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
     )
 
+  (use-package ace-window
+    :config
+    (global-set-key (kbd "M-o") 'ace-window))
+
   (use-package helm
     :bind (("M-x" . helm-M-x))
     :config
@@ -198,7 +202,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
