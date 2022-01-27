@@ -26,7 +26,6 @@
 
 
 
-
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
   (menu-bar-mode -1)
@@ -55,8 +54,6 @@
   (set-face-background 'trailing-whitespace "pink")
 
   ;; font
-  ;(set-face-attribute 'default nil :font (alist-get 'global-font-face platform-config))
-  ;(set-frame-font (alist-get 'global-font-face platform-config) nil t)
   (add-to-list 'default-frame-alist `(font . ,(alist-get 'global-font-face platform-config)))
 
   (list 'font "SF Mono-14")
@@ -97,7 +94,11 @@
 
   (use-package magit
     :bind (("C-c m s" . magit-status))
-    :config (setq magit-save-repository-buffers 'dontask)))
+    :config (setq magit-save-repository-buffers 'dontask))
+
+  (autoload 'notmuch "notmuch" "notmuch mail" t)
+  )
+
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -167,10 +168,12 @@
   ;; (purescript)
   ;; (haskell)
   ;; (ruby)
- (javascript)
+  (javascript)
   ;; (typescript)
   (nixos)
   )
+
+;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun rename-file-and-buffer (new-name)
   (interactive "fRename to:")
@@ -195,14 +198,35 @@
    (find-file-noselect
     "/home/david/.emacs.d/init.el")))
 
+(defun super-kill-line ()
+  "Kills the rest of the line AND any whitespace on the next line. This can be
+really useful when you want to delete an arg in a multi-line function, and want
+to get rid of any space between the point and the next paren/brace."
+  (interactive)
+  (kill-line)
+  (delete-horizontal-space))
+
+(global-set-key (kbd "M-k") 'super-kill-line)
+
 ;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(notmuch-archive-tags '("+archive"))
+ '(notmuch-saved-searches
+   '((:name "inbox" :query "tag:inbox" :key "i")
+     (:name "unread" :query "tag:unread" :key "u")
+     (:name "flagged" :query "tag:flagged" :key "f")
+     (:name "sent" :query "tag:sent" :key "t")
+     (:name "drafts" :query "tag:draft" :key "d")
+     (:name "all mail" :query "*" :key "a")
+     (:name "Inbox last 7 days" :query "date:7d folder:gmail/Inbox -tag:archive")
+     (:name "Inbox last 30 days" :query "date:30d folder:gmail/Inbox -tag:archive")))
  '(package-selected-packages
-   '(ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+ '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
