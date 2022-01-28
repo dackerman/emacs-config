@@ -176,7 +176,7 @@
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun rename-file-and-buffer (new-name)
-  (interactive "fRename to:")
+  (interactive "FRename to:")
   (rename-file (buffer-file-name) new-name)
   (kill-buffer)
   (find-file new-name))
@@ -208,22 +208,51 @@ to get rid of any space between the point and the next paren/brace."
 
 (global-set-key (kbd "M-k") 'super-kill-line)
 
+person@example.com
+
+(defun add-from-rule (start end tag-name)
+  (interactive "r\nsTag as: ")
+  (let ((addr (if (use-region-p)
+                  (buffer-substring start end)
+                (thing-at-point 'email))))
+
+    (switch-to-buffer-other-window
+     (find-file-noselect
+      "/home/david/code/notmuch-tags/notmuch-tags.txt"))
+    (beginning-of-buffer)
+
+    ;; Find an existing tag to put the new one near, or
+    ;; just put it by the #auto-add-rule section. If even
+    ;; that is missing, just append to the end.
+    (or (search-forward (concat "+" tag-name) nil 't)
+        (progn
+          (search-forward "# auto-add-rule" nil 't)
+          (next-line)))
+
+    ;; Insert at the beginning of the line with a newline
+    (move-beginning-of-line nil)
+    (insert (format "+%s -- 'from:%s' tag:new\n" tag-name addr))
+
+    ;; Scroll to the added line in the buffer
+    (previous-line)
+    (search-forward addr)
+    (recenter-top-bottom 1)
+    ))
+
+
+
 ;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(notmuch-archive-tags '("+archive"))
+ '(notmuch-archive-tags '("-inbox"))
  '(notmuch-saved-searches
    '((:name "inbox" :query "tag:inbox" :key "i")
-     (:name "unread" :query "tag:unread" :key "u")
-     (:name "flagged" :query "tag:flagged" :key "f")
+     (:name "unread" :query "(tag:unread and tag:inbox)" :key "u")
      (:name "sent" :query "tag:sent" :key "t")
-     (:name "drafts" :query "tag:draft" :key "d")
-     (:name "all mail" :query "*" :key "a")
-     (:name "Inbox last 7 days" :query "date:7d folder:gmail/Inbox -tag:archive")
-     (:name "Inbox last 30 days" :query "date:30d folder:gmail/Inbox -tag:archive")))
+     (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
  '(package-selected-packages
    '(notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
