@@ -209,8 +209,7 @@ to get rid of any space between the point and the next paren/brace."
 (global-set-key (kbd "M-k") 'super-kill-line)
 
 
-
-(defun make-tag-rule (query tag-name)
+(defun make-tag-rule (rule)
   "Tags a given email under point (or the current region) with the given tag.
 Additionally, adds it to the tags file as a new rule that runs when email comes
 in."
@@ -220,39 +219,16 @@ in."
    (let* ((addr (if (use-region-p)
                     (buffer-substring start end)
                   (thing-at-point 'email)))
-          (initial-query (format "'from:%s'" addr))
-          (query (read-string "Query: " initial-query))
-          (tag-name (read-string "Tag: ")))
+          (initial-rule (format "{:add [\"tag\"] :query [:from \"%s\"]}" addr))
+          (rule (read-string "Rule: " initial-rule)))
+
      ;; return the args in order that add-from-rule takes them
-     (list query (concat "+" tag-name))))
+     (list rule)))
 
-
-  ;; Actually apply tagging before adding to the tag file
-  (notmuch-tag query (list tag-name))
-
-  ;; Now open the tags file and add it there
-  (switch-to-buffer-other-window
-   (find-file-noselect
-    "/home/david/code/notmuch-tags/notmuch-tags.txt"))
-
-  ;; Make sure searches start from the beginning of the file
-  (beginning-of-buffer)
-
-  ;; Find an existing tag to put the new one near, or
-  ;; just put it by the #auto-add-rule section. If even
-  ;; that is missing, just append to the end.
-  (or (search-forward tag-name nil 't)
-      (progn
-        (search-forward "# auto-add-rule" nil 't)
-        (next-line)))
-
-  ;; Insert at the beginning of the line with a newline
-  (move-beginning-of-line nil)
-  (insert (format "%s -- %s and tag:new\n" tag-name query))
-
-  ;; Scroll to the added line in the buffer
-  (previous-line)
-  (recenter-top-bottom 1))
+  (shell-command
+   (format
+    "/home/david/bin/cleave add-rule '/home/david/code/notmuch-tags/notmuch-tags.edn' '%s'"
+    rule)))
 
 
 (defun sync-mail ()
