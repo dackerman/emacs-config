@@ -208,37 +208,71 @@ to get rid of any space between the point and the next paren/brace."
 
 (global-set-key (kbd "M-k") 'super-kill-line)
 
-person@example.com
 
-(defun add-from-rule (start end tag-name)
-  (interactive "r\nsTag as: ")
-  (let ((addr (if (use-region-p)
-                  (buffer-substring start end)
-                (thing-at-point 'email))))
 
-    (switch-to-buffer-other-window
-     (find-file-noselect
-      "/home/david/code/notmuch-tags/notmuch-tags.txt"))
-    (beginning-of-buffer)
+(defun make-tag-rule (query tag-name)
+  "Tags a given email under point (or the current region) with the given tag.
+Additionally, adds it to the tags file as a new rule that runs when email comes
+in."
+  (interactive
+   ;; Custom interactive section lets us pre-populate
+   ;; the query before the user edits it.
+   (let* ((addr (if (use-region-p)
+                    (buffer-substring start end)
+                  (thing-at-point 'email)))
+          (initial-query (format "'from:%s'" addr))
+          (query (read-string "Query: " initial-query))
+          (tag-name (read-string "Tag: ")))
+     ;; return the args in order that add-from-rule takes them
+     (list query (concat "+" tag-name))))
 
-    ;; Find an existing tag to put the new one near, or
-    ;; just put it by the #auto-add-rule section. If even
-    ;; that is missing, just append to the end.
-    (or (search-forward (concat "+" tag-name) nil 't)
-        (progn
-          (search-forward "# auto-add-rule" nil 't)
-          (next-line)))
 
-    ;; Insert at the beginning of the line with a newline
-    (move-beginning-of-line nil)
-    (insert (format "+%s -- 'from:%s' tag:new\n" tag-name addr))
+  ;; Actually apply tagging before adding to the tag file
+  (notmuch-tag query (list tag-name))
 
-    ;; Scroll to the added line in the buffer
-    (previous-line)
-    (search-forward addr)
-    (recenter-top-bottom 1)
-    ))
+  ;; Now open the tags file and add it there
+  (switch-to-buffer-other-window
+   (find-file-noselect
+    "/home/david/code/notmuch-tags/notmuch-tags.txt"))
 
+  ;; Make sure searches start from the beginning of the file
+  (beginning-of-buffer)
+
+  ;; Find an existing tag to put the new one near, or
+  ;; just put it by the #auto-add-rule section. If even
+  ;; that is missing, just append to the end.
+  (or (search-forward tag-name nil 't)
+      (progn
+        (search-forward "# auto-add-rule" nil 't)
+        (next-line)))
+
+  ;; Insert at the beginning of the line with a newline
+  (move-beginning-of-line nil)
+  (insert (format "%s -- %s and tag:new\n" tag-name query))
+
+  ;; Scroll to the added line in the buffer
+  (previous-line)
+  (recenter-top-bottom 1))
+
+
+(defun sync-mail ()
+  (interactive)
+  (ansi-term "/home/david/bin/sync-mail" "sync-mail-status"))
+
+
+(defun handle-in-google-chrome (handle)
+  (mm-display-external handle "google-chrome-stable %s"))
+
+
+(defun open-mime-in-browser ()
+  "Opens the mime-type under point (generally text/html) in chrome"
+  (interactive)
+  (notmuch-show-apply-to-current-part-handle #'handle-in-google-chrome))
+
+
+(add-hook 'notmuch-show-mode-hook
+          (lambda ()
+            (define-key notmuch-show-mode-map "\.v" 'open-mime-in-browser)))
 
 
 ;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -247,19 +281,23 @@ person@example.com
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(markdown-command "multimarkdown")
  '(notmuch-archive-tags '("-inbox"))
+ '(notmuch-hello-tag-list-make-query "tag:unread")
  '(notmuch-saved-searches
    '((:name "inbox" :query "tag:inbox" :key "i")
      (:name "unread" :query "(tag:unread and tag:inbox)" :key "u")
      (:name "sent" :query "tag:sent" :key "t")
      (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
+ '(notmuch-search-oldest-first nil)
  '(package-selected-packages
    '(notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
-     (haskell-indent-spaces . 4))))
+     (haskell-indent-spaces . 4)))
+ '(shr-color-visible-luminance-min 70))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
