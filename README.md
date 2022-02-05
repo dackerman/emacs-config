@@ -1,3 +1,3 @@
-## emacs configuration 2018
+## Emacs configuration files
 
 ![screenshots](images/emacs-screenshot.png)

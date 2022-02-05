@@ -1,6 +1,9 @@
-(setq gc-cons-threshold 20000000)
 
+;; Run emacs server
 (server-start)
+
+;; Use more memory
+(setq gc-cons-threshold 20000000)
 
 ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun package-setup ()
@@ -218,21 +221,30 @@ in."
    ;; the query before the user edits it.
    (let* ((addr (if (use-region-p)
                     (buffer-substring start end)
-                  (thing-at-point 'email)))
+                  (replace-regexp-in-string "[<>]" "" (thing-at-point 'email))))
           (initial-rule (format "{:add [\"tag\"] :query [:from \"%s\"]}" addr))
           (rule (read-string "Rule: " initial-rule)))
 
      ;; return the args in order that add-from-rule takes them
      (list rule)))
 
+  ;; Shell out to my custom clojure command to apply the tags
   (shell-command
    (format
     "/home/david/bin/cleave add-rule '/home/david/code/notmuch-tags/notmuch-tags.edn' '%s'"
     rule)))
 
 
+(defun cleave (command)
+  "Runs an arbitrary cleave command"
+  (interactive "scleave: ")
+  (shell-command (format "/home/david/bin/cleave %s" command)))
+
+
 (defun sync-mail ()
   (interactive)
+  ;; Kill previous buffers so they don't all build up
+  (kill-matching-buffers "sync-mail-status" nil 't)
   (ansi-term "/home/david/bin/sync-mail" "sync-mail-status"))
 
 
@@ -262,10 +274,14 @@ in."
  '(notmuch-hello-tag-list-make-query "tag:unread")
  '(notmuch-saved-searches
    '((:name "inbox" :query "tag:inbox" :key "i")
+     (:name "read-later newsletters" :query "(tag:read-later and tag:newsletters)")
+     (:name "read-later forums" :query "(tag:read-later and tag:forums)")
+     (:name "recently auto-archived" :query "(tag:unread and tag:auto-archive and -tag:unsubscribe and date:-14d..today)")
      (:name "unread" :query "(tag:unread and tag:inbox)" :key "u")
      (:name "sent" :query "tag:sent" :key "t")
      (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
  '(notmuch-search-oldest-first nil)
+ '(notmuch-wash-wrap-lines-length 80)
  '(package-selected-packages
    '(notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
