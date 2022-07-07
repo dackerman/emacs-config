@@ -17,7 +17,6 @@
   (package-initialize))
 (package-setup)
 
-
 ;;; Platform Config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun run-platform-config (platform)
   (cond
@@ -26,7 +25,6 @@
     )))
 (load "~/.emacs.d/config/machine-config.el")
 (set 'platform-config (run-platform-config machine-platform))
-
 
 
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,7 +60,41 @@
   (list 'font "SF Mono-14")
   )
 
+(defun org-mode ()
+  (setq org-log-done 'time))
+
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq email-tags-file "/home/david/code/notmuch-tags/notmuch-tags.edn")
+
+(defun notmuch-apply-address-filters ()
+  (interactive)
+  (let ((filter-contents (buffer-string))
+        (filters-file (make-temp-file "address-filters")))
+    (append-to-file filter-contents nil filters-file)
+    (shell-command (format "/home/david/bin/cleave bulk-add-rules %s %s" email-tags-file filters-file))))
+
+(defun notmuch-search-for-address (addr)
+  (interactive
+   (list (thing-at-point 'email)))
+  (let ((query (format "from:%s" addr)))
+    (notmuch-search query nil nil nil t)
+                                        ;(other-window 1)
+    (display-buffer
+     (notmuch-search-buffer-title query)
+     '(display-buffer-use-some-window . ((inhibit-same-window . t))))))
+
+
+(defun edit-address-view (&optional query)
+  (interactive)
+  (let* ((actual-query (or query "tag:inbox and tag:uncategorized"))
+         (command (format "notmuch address --format=sexp %s" actual-query))
+         (addresses (car (read-from-string (shell-command-to-string command))))
+         (formatted (seq-map (lambda (row) (format "unsubscribe -- %s" (plist-get row :name-addr))) addresses)))
+    (kill-matching-buffers "<notmuch-address:.*" nil t)
+    (switch-to-buffer (format "<notmuch-address:%s>" actual-query))
+    (insert (string-join formatted "\n"))))
+
 
 (defun editor-features ()
   (use-package projectile
@@ -94,12 +126,14 @@
   (use-package fzf
     :config
     (global-set-key (kbd "C-c C-f") 'fzf-projectile))
-
   (use-package magit
     :bind (("C-c m s" . magit-status))
     :config (setq magit-save-repository-buffers 'dontask))
 
+  (use-package company-mode)
+
   (autoload 'notmuch "notmuch" "notmuch mail" t)
+  (global-set-key (kbd "C-c C-a") 'notmuch-search-for-address)
   )
 
 
@@ -158,7 +192,16 @@
   (use-package typescript-mode))
 
 (defun nixos ()
-  (use-package nix-mode))
+  (use-package nix-mode)
+  (use-package nix-sandbox))
+
+(defun lsp ()
+  (use-package flycheck)
+  (use-package lsp-mode
+    :hook ((c++-mode) . lsp-deferred)
+    :commands lsp)
+  (use-package lsp-ui
+    :commands lsp-ui-mode))
 
 ;; Selection of features. Comment out a section to prevent it from running
 (defun initialize-user-config ()
@@ -167,13 +210,14 @@
   (editor-features)
   (load-theme 'dracula t)
   (clojure)
+  (haskell)
+  (javascript)
+  (nixos)
+  (lsp)
   ;; (rust)
   ;; (purescript)
-  ;; (haskell)
   ;; (ruby)
-  (javascript)
   ;; (typescript)
-  (nixos)
   )
 
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -263,33 +307,24 @@ in."
             (define-key notmuch-show-mode-map "\.v" 'open-mime-in-browser)))
 
 
+(defun nixos-rebuild ()
+  (interactive)
+  (sudo-shell-command "*nixos-rebuild*" "nixos-rebuild switch"))
+
+
+(defun sudo-shell-command (name command)
+  (kill-matching-buffers name nil 't)
+  (ansi-term
+   (concat "echo " (shell-quote-argument (read-passwd "Password? "))
+           (format " | sudo -S %s" command))
+   name))
+
+
+
+
+
 ;;; Custom Set Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(markdown-command "multimarkdown")
- '(notmuch-archive-tags '("-inbox"))
- '(notmuch-hello-tag-list-make-query "tag:unread")
- '(notmuch-saved-searches
-   '((:name "inbox" :query "tag:inbox" :key "i")
-     (:name "read-later newsletters" :query "(tag:read-later and tag:newsletters)")
-     (:name "read-later forums" :query "(tag:read-later and tag:forums)")
-     (:name "recently auto-archived" :query "(tag:unread and tag:auto-archive and -tag:unsubscribe and date:-14d..today)")
-     (:name "unread" :query "(tag:unread and tag:inbox)" :key "u")
-     (:name "sent" :query "tag:sent" :key "t")
-     (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
- '(notmuch-search-oldest-first nil)
- '(notmuch-wash-wrap-lines-length 80)
- '(package-selected-packages
-   '(notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
- '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
- '(safe-local-variable-values
-   '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
-     (haskell-process-use-ghci . t)
-     (haskell-indent-spaces . 4)))
- '(shr-color-visible-luminance-min 70))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -305,3 +340,36 @@ in."
 
 ; Initialize
 (initialize-user-config)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(lsp-clients-clangd-args
+   '("--run" "clangd --header-insertion-decorators=0" "/home/david/code/vulkan-test/shell.nix"))
+ '(lsp-clients-clangd-executable "nix-shell")
+ '(markdown-command "multimarkdown")
+ '(notmuch-archive-tags '("-inbox"))
+ '(notmuch-hello-tag-list-make-query "tag:unread")
+ '(notmuch-saved-searches
+   '((:name "inbox" :query "tag:inbox" :key "i")
+     (:name "read-later" :query "(tag:unread and tag:read-later)")
+     (:name "unread newsletters" :query "(tag:unread and tag:newsletters)")
+     (:name "unread forums" :query "(tag:unread and tag:forums)")
+     (:name "recently auto-archived" :query "(tag:unread and tag:auto-archive and -tag:unsubscribe and date:-14d..today)")
+     (:name "unread" :query "(tag:unread and tag:inbox)" :key "u")
+     (:name "sent" :query "tag:sent" :key "t")
+     (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
+ '(notmuch-search-oldest-first nil)
+ '(notmuch-wash-wrap-lines-length 80)
+ '(package-selected-packages
+   '(company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+ '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
+ '(safe-local-variable-values
+   '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
+     (haskell-process-use-ghci . t)
+     (haskell-indent-spaces . 4)))
+ '(send-mail-function 'smtpmail-send-it)
+ '(shr-color-visible-luminance-min 70)
+ '(smtpmail-smtp-server "smtp.gmail.com")
+ '(smtpmail-smtp-service 587))
