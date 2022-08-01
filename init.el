@@ -26,6 +26,7 @@
 (load "~/.emacs.d/config/machine-config.el")
 (set 'platform-config (run-platform-config machine-platform))
 
+(global-set-key (kbd "s-q") 'fill-paragraph)
 
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
