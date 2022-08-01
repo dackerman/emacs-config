@@ -60,7 +60,7 @@
   (list 'font "SF Mono-14")
   )
 
-(defun org-mode ()
+(defun org-mode-settings ()
   (setq org-log-done 'time))
 
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,7 +130,8 @@
     :bind (("C-c m s" . magit-status))
     :config (setq magit-save-repository-buffers 'dontask))
 
-  (use-package company-mode)
+  (use-package company-mode
+    :hook clojure-mode)
 
   (autoload 'notmuch "notmuch" "notmuch mail" t)
   (global-set-key (kbd "C-c C-a") 'notmuch-search-for-address)
@@ -145,7 +146,17 @@
     :mode "\\.rs\\'"))
 
 (defun clojure ()
-  (use-package cider))
+  (use-package cider)
+  (use-package paredit
+    :ensure t)
+  (use-package flycheck-clj-kondo)
+  (use-package clojure-mode
+    :ensure t
+    :init
+    (add-hook 'clojure-mode-hook #'enable-paredit-mode)
+    (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+    :config
+    (require 'flycheck-clj-kondo)))
 
 (defun purescript ()
   (use-package purescript-mode
@@ -195,8 +206,11 @@
   (use-package nix-mode)
   (use-package nix-sandbox))
 
-(defun lsp ()
+(defun flycheck ()
   (use-package flycheck)
+  (add-hook 'after-init-hook #'global-flycheck-mode))
+
+(defun lsp ()
   (use-package lsp-mode
     :hook ((c++-mode) . lsp-deferred)
     :commands lsp)
@@ -208,7 +222,9 @@
   (require 'use-package)
   (look-and-feel)
   (editor-features)
+  (org-mode-settings)
   (load-theme 'dracula t)
+  (flycheck)
   (clojure)
   (haskell)
   (javascript)
@@ -363,7 +379,7 @@ in."
  '(notmuch-search-oldest-first nil)
  '(notmuch-wash-wrap-lines-length 80)
  '(package-selected-packages
-   '(company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
