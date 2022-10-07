@@ -61,7 +61,9 @@
   )
 
 (defun org-mode-settings ()
-  (setq org-log-done 'time))
+  (setq org-log-done 'time)
+  (setq org-todo-keywords
+        '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
 
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -198,6 +200,7 @@
   (use-package rjsx-mode)
   (setq js-indent-level 2)
   (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
+
 
 (defun typescript ()
   (use-package typescript-mode))
@@ -378,8 +381,9 @@ in."
      (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
  '(notmuch-search-oldest-first nil)
  '(notmuch-wash-wrap-lines-length 80)
+ '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
