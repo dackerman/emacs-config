@@ -37,6 +37,7 @@
   (global-linum-mode 1)
   (show-paren-mode 1)
   (global-unset-key (kbd "C-z"))
+  (setq ring-bell-function 'ignore)
 
   (setq-default indent-tabs-mode nil) ; tabs to spaces
   (setq inhibit-startup-message t
@@ -59,7 +60,16 @@
   (add-to-list 'default-frame-alist `(font . ,(alist-get 'global-font-face platform-config)))
 
   (list 'font "SF Mono-14")
+  (set-face-attribute 'default nil :height 150)
   )
+
+(defun set-autofill-hook ()
+  (if (string-equal "notes" (projectile-project-name))
+      (progn
+        (auto-fill-mode 't)
+        (set-fill-column 80))))
+
+(add-hook 'markdown-mode-hook 'set-autofill-hook)
 
 (defun org-mode-settings ()
   (setq org-log-done 'time)
@@ -76,6 +86,14 @@
         (filters-file (make-temp-file "address-filters")))
     (append-to-file filter-contents nil filters-file)
     (shell-command (format "/home/david/bin/cleave bulk-add-rules %s %s" email-tags-file filters-file))))
+
+(defun make-save-commit ()
+  (interactive)
+  (projectile-run-shell-command-in-root "git add .")
+  (shell-command "git commit -m 'save'")
+  (shell-command "git push"))
+
+(global-set-key (kbd "M-C-S") 'make-save-commit)
 
 (defun notmuch-search-for-address (addr)
   (interactive
@@ -111,6 +129,10 @@
     (projectile-mode +1)
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
     )
+
+  (use-package treemacs)
+
+  (use-package treemacs-projectile)
 
   (use-package ace-window
     :config
@@ -365,6 +387,8 @@ in."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("73803d7cebbc240fd6cd8a54077b8fbf0b263a25db48579f5953279986283481" "37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
  '(lsp-clients-clangd-args
    '("--run" "clangd --header-insertion-decorators=0" "/home/david/code/vulkan-test/shell.nix"))
  '(lsp-clients-clangd-executable "nix-shell")
@@ -384,7 +408,7 @@ in."
  '(notmuch-wash-wrap-lines-length 80)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
