@@ -151,9 +151,14 @@
   (use-package fzf
     :config
     (global-set-key (kbd "C-c C-f") 'fzf-projectile))
+
   (use-package magit
     :bind (("C-c m s" . magit-status))
     :config (setq magit-save-repository-buffers 'dontask))
+
+  (use-package keychain-environment
+    :config
+    (keychain-refresh-environment))
 
   (use-package company-mode
     :hook clojure-mode)
@@ -172,9 +177,10 @@
 
 (defun clojure ()
   (use-package cider)
-  (use-package paredit
-    :ensure t)
   (use-package flycheck-clj-kondo)
+  (use-package parinfer-rust-mode
+    :ensure t
+    :hook clojure-mode)
   (use-package clojure-mode
     :ensure t
     :init
@@ -408,10 +414,11 @@ in."
  '(notmuch-wash-wrap-lines-length 80)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(parinfer-rust-mode keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
-   '((intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
+   '((cider-shadow-cljs-default-options . "app")
+     (intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
      (haskell-indent-spaces . 4)))
  '(send-mail-function 'smtpmail-send-it)

@@ -1,3 +1,5 @@
 * Default
 ** cnp
  - path :: ~/code/cnp
+** event_server
+ - path :: ~/code/event-server/src/clj/event_server
