@@ -8,3 +8,7 @@
 /tramp
 /transient
 /eln-cache
+.cache
+.dap-breakpoints
+.mc-lists.el
+projectile.cache

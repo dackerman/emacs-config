@@ -1,21 +1,19 @@
-
 ;; Run emacs server
 (server-start)
 
 ;; Use more memory
-(setq gc-cons-threshold 20000000)
+(setq gc-cons-threshold (* 100 1024 1024))
 
 ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun package-setup ()
-  (setq package-enable-at-startup nil)
-  (setq default-directory "~/.emacs.d/")
-  (setq package-user-dir "~/.emacs.d/packages")
-  (add-to-list 'load-path "~/.emacs.d/config")
 
-  (require 'package)
-  (add-to-list 'package-archives (cons "melpa" "https://melpa.org/packages/") t)
-  (package-initialize))
-(package-setup)
+(setq package-enable-at-startup nil)
+(setq default-directory "~/.emacs.d/")
+(setq package-user-dir "~/.emacs.d/packages")
+(add-to-list 'load-path "~/.emacs.d/config")
+
+(require 'package)
+(add-to-list 'package-archives (cons "melpa" "https://melpa.org/packages/") t)
+(package-initialize)
 
 ;;; Platform Config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun run-platform-config (platform)
@@ -116,6 +114,13 @@
     (switch-to-buffer (format "<notmuch-address:%s>" actual-query))
     (insert (string-join formatted "\n"))))
 
+(defun clerk-show ()
+  (interactive)
+  (when-let
+      ((filename (buffer-file-name)))
+    (save-buffer)
+    (cider-interactive-eval
+     (concat "(nextjournal.clerk/show! \"" filename "\")"))))
 
 (defun editor-features ()
   (use-package projectile
@@ -130,7 +135,12 @@
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
     )
 
+  (use-package multiple-cursors
+    :config
+    (global-set-key (kbd "C-s-c C-s-c") 'mc/edit-lines))
+
   (use-package treemacs)
+
 
   (use-package treemacs-projectile)
 
@@ -177,17 +187,23 @@
 
 (defun clojure ()
   (use-package cider)
+  (use-package clj-refactor)
   (use-package flycheck-clj-kondo)
   (use-package parinfer-rust-mode
     :ensure t
     :hook clojure-mode)
+
   (use-package clojure-mode
     :ensure t
     :init
     (add-hook 'clojure-mode-hook #'enable-paredit-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+    (add-hook 'clojure-mode-hook 'lsp)
+    (add-hook 'clojurescript-mode-hook 'lsp)
+    (add-hook 'clojurec-mode-hook 'lsp)
     :config
-    (require 'flycheck-clj-kondo)))
+    (require 'flycheck-clj-kondo)
+    (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show)))
 
 (defun purescript ()
   (use-package purescript-mode
@@ -239,15 +255,15 @@
   (use-package nix-sandbox))
 
 (defun flycheck ()
-  (use-package flycheck)
-  (add-hook 'after-init-hook #'global-flycheck-mode))
+  (use-package flycheck))
 
 (defun lsp ()
-  (use-package lsp-mode
-    :hook ((c++-mode) . lsp-deferred)
-    :commands lsp)
-  (use-package lsp-ui
-    :commands lsp-ui-mode))
+  (use-package lsp-mode)
+  (use-package lsp-ui)
+
+  (lsp-treemacs-sync-mode 1)
+
+  )
 
 ;; Selection of features. Comment out a section to prevent it from running
 (defun initialize-user-config ()
@@ -257,11 +273,11 @@
   (org-mode-settings)
   (load-theme 'dracula t)
   (flycheck)
+  (lsp)
   (clojure)
-  (haskell)
   (javascript)
   (nixos)
-  (lsp)
+  ;(haskell)
   ;; (rust)
   ;; (purescript)
   ;; (ruby)
@@ -288,15 +304,17 @@
     "/home/david/code/nixos-config/etc/nixos/configuration.nix")))
 
 (defun open-emacs-config ()
+  "Opens my Emacs configuration."
   (interactive)
   (switch-to-buffer
    (find-file-noselect
     "/home/david/.emacs.d/init.el")))
 
 (defun super-kill-line ()
-  "Kills the rest of the line AND any whitespace on the next line. This can be
-really useful when you want to delete an arg in a multi-line function, and want
-to get rid of any space between the point and the next paren/brace."
+  "Kill the rest of the line AND any whitespace on the next line.
+This can be really useful when you want to delete an arg in a
+multi-line function, and want to get rid of any space between the
+point and the next paren/brace."
   (interactive)
   (kill-line)
   (delete-horizontal-space))
@@ -306,8 +324,8 @@ to get rid of any space between the point and the next paren/brace."
 
 (defun make-tag-rule (rule)
   "Tags a given email under point (or the current region) with the given tag.
-Additionally, adds it to the tags file as a new rule that runs when email comes
-in."
+Additionally, adds it to the tags file as a new RULE that runs
+when email comes in."
   (interactive
    ;; Custom interactive section lets us pre-populate
    ;; the query before the user edits it.
@@ -328,12 +346,13 @@ in."
 
 
 (defun cleave (command)
-  "Runs an arbitrary cleave command"
+  "Run an arbitrary cleave COMMAND."
   (interactive "scleave: ")
   (shell-command (format "/home/david/bin/cleave %s" command)))
 
 
 (defun sync-mail ()
+  "Syncs mail from the backend."
   (interactive)
   ;; Kill previous buffers so they don't all build up
   (kill-matching-buffers "sync-mail-status" nil 't)
@@ -393,11 +412,9 @@ in."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(cider-repl-pop-to-buffer-on-connect nil)
  '(custom-safe-themes
    '("73803d7cebbc240fd6cd8a54077b8fbf0b263a25db48579f5953279986283481" "37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
- '(lsp-clients-clangd-args
-   '("--run" "clangd --header-insertion-decorators=0" "/home/david/code/vulkan-test/shell.nix"))
- '(lsp-clients-clangd-executable "nix-shell")
  '(markdown-command "multimarkdown")
  '(notmuch-archive-tags '("-inbox"))
  '(notmuch-hello-tag-list-make-query "tag:unread")
@@ -414,11 +431,10 @@ in."
  '(notmuch-wash-wrap-lines-length 80)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(parinfer-rust-mode keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(clj-refactor multiple-cursors parinfer-rust-mode keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((cider-shadow-cljs-default-options . "app")
-     (intero-targets "mailroom-server:lib" "mailroom-server:exe:mailroom-server" "mailroom-server:exe:mailroom-worker" "mailroom-server:test:test")
      (haskell-process-use-ghci . t)
      (haskell-indent-spaces . 4)))
  '(send-mail-function 'smtpmail-send-it)

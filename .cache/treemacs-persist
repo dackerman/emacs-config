@@ -3,3 +3,5 @@
  - path :: ~/code/cnp
 ** event_server
  - path :: ~/code/event-server/src/clj/event_server
+** moldable-mail
+ - path :: ~/code/moldable-mail
