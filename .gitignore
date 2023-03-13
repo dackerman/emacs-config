@@ -12,3 +12,4 @@
 .dap-breakpoints
 .mc-lists.el
 projectile.cache
+/packages/archives

@@ -1,5 +1,0 @@
-;;; -*- lisp-data -*-
-(("~/code/cnp/")
- ("~/code/nixos-config/")
- ("~/code/ionic-cnp-test/")
- ("~/code/emacs-config/"))
