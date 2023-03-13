@@ -135,12 +135,7 @@
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
     )
 
-  (use-package multiple-cursors
-    :config
-    (global-set-key (kbd "C-s-c C-s-c") 'mc/edit-lines))
-
   (use-package treemacs)
-
 
   (use-package treemacs-projectile)
 
@@ -187,11 +182,7 @@
 
 (defun clojure ()
   (use-package cider)
-  (use-package clj-refactor)
   (use-package flycheck-clj-kondo)
-  (use-package parinfer-rust-mode
-    :ensure t
-    :hook clojure-mode)
 
   (use-package clojure-mode
     :ensure t
@@ -431,7 +422,7 @@ when email comes in."
  '(notmuch-wash-wrap-lines-length 80)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(clj-refactor multiple-cursors parinfer-rust-mode keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck nix-sandbox lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(multiple-cursors keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
    '((cider-shadow-cljs-default-options . "app")
