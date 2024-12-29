@@ -26,13 +26,30 @@
 
 (global-set-key (kbd "s-q") 'fill-paragraph)
 
+(defun dack-cider-eval-last-sexp-and-replace-formatted ()
+  (interactive)
+  (cider-eval-last-sexp-and-replace)
+  (cider-format-edn-last-sexp))
+
+(global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
+
+(defun dack-open-cnp ()
+  (interactive)
+  (find-file "~/code/cnp/src/main/cnp/app.cljs")
+  (cider-connect-cljs '(:host "localhost"
+                              :port "37695"
+                              :project-dir "~/code/cnp"
+                              :cljs-repl-type shadow-select)))
+
+(global-set-key (kbd "C-c C-d c") 'dack-open-cnp)
+
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
   (tool-bar-mode -1)
   (column-number-mode t)
-  (global-linum-mode 1)
+  (global-display-line-numbers-mode 1)
   (show-paren-mode 1)
   (global-unset-key (kbd "C-z"))
   (setq ring-bell-function 'ignore)
@@ -144,9 +161,9 @@
     (global-set-key (kbd "M-o") 'ace-window))
 
   (use-package helm
-    :bind (("M-x" . helm-M-x))
+    :bind (("M-x" . helm-M-x)
+           ("C-x C-f" . helm-find-files))
     :config
-    (require 'helm-config)
     (helm-mode 1))
 
   (use-package helm-projectile
@@ -192,9 +209,18 @@
     (add-hook 'clojure-mode-hook 'lsp)
     (add-hook 'clojurescript-mode-hook 'lsp)
     (add-hook 'clojurec-mode-hook 'lsp)
+    (add-hook 'before-save-hook 'cider-format-buffer t t)
+
     :config
     (require 'flycheck-clj-kondo)
     (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show)))
+
+(defun emacs-lisp ()
+  (add-hook 'lisp-mode-hook #'enable-paredit-mode))
+
+(defun common-lisp ()
+  (use-package slime)
+  (setq inferior-lisp-program "sbcl"))
 
 (defun purescript ()
   (use-package purescript-mode
@@ -223,6 +249,15 @@
   (message "setting haskell-mode-hook ")
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
+(defun llms ()
+  (use-package ellama
+    :init
+    (setopt ellama-language "English")
+    (require 'llm-ollama)
+    (setopt ellama-provider
+	    (make-llm-ollama
+	     :chat-model "mixtral" :embedding-model "mixtral"))))
+
 (defun ruby ()
   (use-package ruby-mode
     :config
@@ -242,8 +277,7 @@
   (use-package typescript-mode))
 
 (defun nixos ()
-  (use-package nix-mode)
-  (use-package nix-sandbox))
+  (use-package nix-mode))
 
 (defun flycheck ()
   (use-package flycheck))
@@ -252,9 +286,7 @@
   (use-package lsp-mode)
   (use-package lsp-ui)
 
-  (lsp-treemacs-sync-mode 1)
-
-  )
+  (lsp-treemacs-sync-mode 1))
 
 ;; Selection of features. Comment out a section to prevent it from running
 (defun initialize-user-config ()
@@ -266,6 +298,8 @@
   (flycheck)
   (lsp)
   (clojure)
+  (emacs-lisp)
+  (common-lisp)
   (javascript)
   (nixos)
   ;(haskell)
@@ -403,9 +437,14 @@ when email comes in."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(cider-clojure-cli-aliases ":dev")
+ '(cider-doc-auto-select-buffer nil)
+ '(cider-infer-remote-nrepl-ports t)
+ '(cider-print-options '(("print-length" 50)))
  '(cider-repl-pop-to-buffer-on-connect nil)
  '(custom-safe-themes
    '("73803d7cebbc240fd6cd8a54077b8fbf0b263a25db48579f5953279986283481" "37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
+ '(exec-path-from-shell-variables '("PATH" "MANPATH" "OPENAI_API_KEY"))
  '(markdown-command "multimarkdown")
  '(notmuch-archive-tags '("-inbox"))
  '(notmuch-hello-tag-list-make-query "tag:unread")
@@ -420,15 +459,64 @@ when email comes in."
      (:name "emacs-devel" :query "tag:forums/emacs and tag:inbox" :key "e")))
  '(notmuch-search-oldest-first nil)
  '(notmuch-wash-wrap-lines-length 80)
+ '(nrepl-force-ssh-for-remote-hosts t)
+ '(nrepl-use-ssh-fallback-for-remote-hosts t)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(multiple-cursors keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(request prettier cuda-mode ellama html-to-hiccup slime multiple-cursors keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+ '(projectile-indexing-method 'hybrid)
+ '(projectile-project-search-path '("~/code"))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
  '(safe-local-variable-values
-   '((cider-shadow-cljs-default-options . "app")
+   '((eval
+      (lambda nil
+        (defun cider-jack-in-wrapper-function
+            (orig-fun &rest args)
+          (if
+              (and
+               (boundp 'use-bb-dev)
+               use-bb-dev)
+              (message "Use `bb dev` to start the development server, then `cider-connect` to the port it specifies.")
+            (apply orig-fun args)))
+        (advice-add 'cider-jack-in :around #'cider-jack-in-wrapper-function)
+        (when
+            (not
+             (featurep 'clerk))
+          (let
+              ((init-file-path
+                (expand-file-name "clerk.el" default-directory)))
+            (when
+                (file-exists-p init-file-path)
+              (load init-file-path)
+              (require 'clerk))))))
+     (use-bb-dev . t)
+     (prettify-symbols-mode)
+     (cider-shadow-cljs-default-options . "app")
      (haskell-process-use-ghci . t)
      (haskell-indent-spaces . 4)))
  '(send-mail-function 'smtpmail-send-it)
  '(shr-color-visible-luminance-min 70)
  '(smtpmail-smtp-server "smtp.gmail.com")
  '(smtpmail-smtp-service 587))
+
+
+(defun shell-command-to-buffer (command-list input)
+  "Execute COMMAND with INPUT and stream output to current buffer."
+  (let* ((process (make-process
+                   :name "shell-command-process"
+                   :buffer (current-buffer)
+                   :command command-list
+
+                   :filter
+                   (lambda (proc output)
+                     (message "filtering %s" output)
+                     (with-current-buffer (process-buffer proc)
+                       (goto-char (point-max))
+                       (insert output))))))))
+
+
+(defun pipe-content-to-process (process content)
+  (process-send-string process (concat cnotent "\n"))
+  (process-send-eof process))
+
+;(shell-command-to-buffer (list "sh" "-ic" "~/bin/llm") "hi\nther\ndummy")
