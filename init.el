@@ -497,7 +497,8 @@ when email comes in."
  '(send-mail-function 'smtpmail-send-it)
  '(shr-color-visible-luminance-min 70)
  '(smtpmail-smtp-server "smtp.gmail.com")
- '(smtpmail-smtp-service 587))
+ '(smtpmail-smtp-service 587)
+ '(zig-zig-bin "/home/david/bin/zig"))
 
 
 (defun shell-command-to-buffer (command-list input)

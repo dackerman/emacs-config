@@ -15,3 +15,6 @@ projectile.cache
 /packages/archives
 projects
 .lsp-session-v1
+/parinfer-rust
+/ellama-sessions
+/request
