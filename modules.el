@@ -62,7 +62,8 @@
   (set-face-background 'trailing-whitespace "pink")
 
   ;; font
-  (add-to-list 'default-frame-alist (list 'font custom-font))
+  (when (and window-system custom-font)
+    (add-to-list 'default-frame-alist `(font . ,custom-font)))
 
   (set-face-attribute 'default nil :height 150))
 
