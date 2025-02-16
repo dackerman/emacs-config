@@ -5,16 +5,20 @@ machines.
 
 ## Setup
 
+### Option 1: use the default installation
 1. Copy the example init file:
-```
-$ cp init.example.el init.el
-```
+  ```sh
+  $ cp init.example.el init.el
+  ```
 
-2. Pick an installation from the `installations/` directory or copy an
-   existing one and tweak it.
+### Option 2: make your own
+1. Copy an existing file in the `installations` directory and tweak
+   it.
 
-3. Load that installation from the `init.el` file.
-
+2. Load that installation from the `init.el` file.
+  ```elisp
+  (load "~/.emacs.d/installations/your-installation.el")
+  ```
 
 ## Background
 
