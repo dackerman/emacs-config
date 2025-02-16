@@ -1,7 +1,17 @@
 ## Emacs configuration files
 
-An emacs system that supports multiple "installations" from different
-machines.
+This is my current emacs configuration - it's a simple system that
+supports multiple "installations" from different machines.
+
+### Some packages that are installed
+
+* `projectile`
+* `helm`
+* `dracula-theme`
+* `paredit`
+* `magit`
+* `treemacs`
+* `company-mode`
 
 ## Setup
 
