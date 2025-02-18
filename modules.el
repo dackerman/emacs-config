@@ -1,8 +1,19 @@
 ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun package-setup ()
-  (setq package-enable-at-startup nil)
   (setq default-directory "~/.emacs.d/")
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+
+  (setq straight-use-package-by-default 't)
+  (bootstrap-straight-el)
+  (straight-use-package 'use-package)
+  (require 'use-package-ensure)
+  (setq use-package-always-ensure t)
+  )
+
+(defun init-deprecated-package-el ()
+  (setq package-enable-at-startup nil)
   (setq package-user-dir "~/.emacs.d/packages")
   (add-to-list 'load-path "~/.emacs.d/config")
 
@@ -27,54 +38,70 @@
         (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage)))
 
+(package-setup)
+
+(defvar available-features '())
+
+(defmacro deffeature (name &rest body)
+  `(progn
+     (add-to-list 'available-features ',name)
+     (when (and (boundp 'enabled-features) (member ',name enabled-features))
+       ,@body)))
+
+
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun look-and-feel (custom-font)
-  (setq custom-file "~/.emacs.d/custom.el")
-  (load custom-file)
+(deffeature
+ look-and-feel
+ 
+ (use-package dracula-theme
+   :config
+   (load-theme 'dracula t))
 
-  (load-theme 'dracula t)
+ (menu-bar-mode -1)
+ (scroll-bar-mode -1)
+ (tool-bar-mode -1)
+ (column-number-mode t)
+ (global-display-line-numbers-mode 1)
+ (show-paren-mode 1)
+ (global-unset-key (kbd "C-z"))
+ (global-set-key (kbd "s-q") 'fill-paragraph)
+ (setq ring-bell-function 'ignore)
 
-  (menu-bar-mode -1)
-  (scroll-bar-mode -1)
-  (tool-bar-mode -1)
-  (column-number-mode t)
-  (global-display-line-numbers-mode 1)
-  (show-paren-mode 1)
-  (global-unset-key (kbd "C-z"))
-  (global-set-key (kbd "s-q") 'fill-paragraph)
-  (setq ring-bell-function 'ignore)
+ (setq-default indent-tabs-mode nil)   ; tabs to spaces
+ (setq inhibit-startup-message t
+       inhibit-startup-echo-area-message t
+       tab-width 2
+       scroll-step 1
+       kill-whole-line t
+       auto-save-timeout 10
+       auto-save-file-name-transforms (progn
+                                        (make-directory "~/.emacs.d/auto-save-files/" t)
+                                        `((".*" "~/.emacs.d/auto-save-files/" t)))
+       backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
+       make-backup-files nil
+       create-lockfiles nil
+       )
+ (set-default 'truncate-lines t)
+ (set-face-background 'trailing-whitespace "pink")
 
-  (setq-default indent-tabs-mode nil)   ; tabs to spaces
-  (setq inhibit-startup-message t
-        inhibit-startup-echo-area-message t
-        tab-width 2
-        scroll-step 1
-        kill-whole-line t
-        auto-save-timeout 10
-        auto-save-file-name-transforms (progn
-                                         (make-directory "~/.emacs.d/auto-save-files/" t)
-                                         `((".*" "~/.emacs.d/auto-save-files/" t)))
-        backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
-        make-backup-files nil
-        create-lockfiles nil
-        )
-  (set-default 'truncate-lines t)
-  (set-face-background 'trailing-whitespace "pink")
+ ;; font
+ (when (and window-system custom-font)
+   (add-to-list 'default-frame-alist `(font . ,custom-font)))
 
-  ;; font
-  (when (and window-system custom-font)
-    (add-to-list 'default-frame-alist `(font . ,custom-font)))
+ (set-face-attribute 'default nil :height 100))
 
-  (set-face-attribute 'default nil :height 150))
+(deffeature
+ org
+ 
+ (setq org-log-done 'time)
+ (setq org-todo-keywords
+       '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
 
-(defun org ()
-  (setq org-log-done 'time)
-  (setq org-todo-keywords
-        '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
+
 
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun email ()
+(deffeature email
   (autoload 'notmuch "notmuch" "notmuch mail" t)
   (setq email-tags-file "/home/david/code/notmuch-tags/notmuch-tags.edn")
 
@@ -164,7 +191,7 @@ when email comes in."
 (global-set-key (kbd "M-C-S") 'make-save-commit)
 
 
-(defun editor-features ()
+(deffeature editor-features
   (use-package projectile
     :init
     (setq projectile-indexing-method 'alien)
@@ -208,14 +235,12 @@ when email comes in."
     (keychain-refresh-environment))
 
   (use-package company-mode
-    :hook clojure-mode)
-
-  )
+    :hook clojure-mode))
 
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun markdown ()
+(deffeature markdown
   (defun set-autofill-hook ()
     (if (string-equal "notes" (projectile-project-name))
         (progn
@@ -225,13 +250,13 @@ when email comes in."
   (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
 
-(defun rust ()
+(deffeature rust
   (use-package rust-mode
     :defer t
     :mode "\\.rs\\'"))
 
 
-(defun clojure ()
+(deffeature clojure
   (use-package cider)
   (use-package flycheck-clj-kondo)
 
@@ -275,23 +300,23 @@ when email comes in."
   (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
 
 
-(defun emacs-lisp ()
+(deffeature emacs-lisp
   (add-hook 'lisp-mode-hook #'enable-paredit-mode))
 
 
-(defun common-lisp ()
+(deffeature common-lisp
   (use-package slime)
   (setq inferior-lisp-program "sbcl"))
 
 
-(defun purescript ()
+(deffeature purescript
   (use-package purescript-mode
     :defer t
     :init
     (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)))
 
 
-(defun haskell ()
+(deffeature haskell
   (defun haskell-save-hook ()
     (message "haskell save hook running")
     (haskell-align-imports)
@@ -313,7 +338,7 @@ when email comes in."
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
 
-(defun llms ()
+(deffeature llms
   (use-package ellama
     :init
     (setopt ellama-language "English")
@@ -323,7 +348,7 @@ when email comes in."
 	     :chat-model "mixtral" :embedding-model "mixtral"))))
 
 
-(defun ruby ()
+(deffeature ruby
   (use-package ruby-mode
     :config
     (defun my-ruby-mode-hook ()
@@ -333,25 +358,25 @@ when email comes in."
     (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)))
 
 
-(defun javascript ()
+(deffeature javascript
   (use-package rjsx-mode)
   (setq js-indent-level 2)
   (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
 
 
-(defun typescript ()
+(deffeature typescript
   (use-package typescript-mode))
 
 
-(defun nixos ()
+(deffeature nixos
   (use-package nix-mode))
 
 
-(defun flycheck ()
+(deffeature flycheck
   (use-package flycheck))
 
 
-(defun lsp ()
+(deffeature lsp
   (use-package lsp-mode)
   (use-package lsp-ui)
 
@@ -437,3 +462,8 @@ point and the next paren/brace."
 (defun pipe-content-to-process (process content)
   (process-send-string process (concat cnotent "\n"))
   (process-send-eof process))
+
+
+
+(if (not (boundp 'enabled-features))
+    (error "enabled-features list not set, available features are \n%s" (mapconcat #'symbol-name (reverse available-features) "\n")))

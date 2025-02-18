@@ -3,7 +3,7 @@
 This is my current emacs configuration - it's a simple system that
 supports multiple "installations" from different machines.
 
-### Some packages that are installed
+### Some packages that are available
 
 * `projectile`
 * `helm`
@@ -32,20 +32,17 @@ supports multiple "installations" from different machines.
 
 ## Background
 
-The way it works is that `modules.el` defines a bunch of functions for
+The way it works is that `modules.el` defines a bunch of macros for
 different bits of functionality (e.g. clojure-mode and key bindings)
 without explicitly executing them.
 
 Then each machine has a script in the "installations" folder that
-simply calls the functions that it wants to load.
+includes all the features it wants to use.
 
-What's nice about this design is that the functions can have regular
-parameters for cases where machines differ - for example, on mac I
-might have different fonts installed.
-
-Also, I have found that I work with different programming languages at
-work and home, so being able to pick and choose which ones I actually
-load makes startup faster and less cluttered.
-
+The reason they are macros is because `use-package` wants to run at
+the top-level, so you can't just run it within a regular function. So
+these macros essentially check if the given feature is enabled, and
+execute the body of the feature at the top level if so. That way, the
+features that are included actually execute at macroexpansion time.
 
 ![screenshots](images/emacs-screenshot.png)

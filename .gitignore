@@ -20,4 +20,8 @@ projects
 /request
 /packages
 
+straight/*
+!straight/versions/
+!straight/versions/default.el
+
 init.el
