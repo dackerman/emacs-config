@@ -4,7 +4,7 @@
 ;; Use more memory
 (setq gc-cons-threshold (* 100 1024 1024))
 
-(add-to-list 'load-path "~/.emacs.d")
+(add-to-list 'load-path "~/.emacs.d/lisp")
 
 (defvar custom-font "Hack-12")
 (defvar enabled-features
@@ -20,4 +20,4 @@
         nixos
         markdown))
 
-(require 'modules)
+(require 'features)

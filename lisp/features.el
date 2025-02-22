@@ -1,4 +1,4 @@
-;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun package-setup ()
   (setq default-directory "~/.emacs.d/")
@@ -52,7 +52,7 @@
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (deffeature
  look-and-feel
- 
+
  (use-package dracula-theme
    :config
    (load-theme 'dracula t))
@@ -92,7 +92,7 @@
 
 (deffeature
  org
- 
+
  (setq org-log-done 'time)
  (setq org-todo-keywords
        '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
@@ -204,9 +204,8 @@ when email comes in."
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
     )
 
-  (use-package treemacs)
-
-  (use-package treemacs-projectile)
+  (use-package paredit
+    :hook ((emacs-lisp-mode clojure-mode) . paredit-mode))
 
   (use-package ace-window
     :config
@@ -234,8 +233,8 @@ when email comes in."
     :config
     (keychain-refresh-environment))
 
-  (use-package company-mode
-    :hook clojure-mode))
+  (use-package company
+    :hook ((emacs-lisp-mode clojure-mode) . company-mode)))
 
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -271,7 +270,6 @@ when email comes in."
   (use-package clojure-mode
     :ensure t
     :init
-    (add-hook 'clojure-mode-hook #'enable-paredit-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
     (add-hook 'clojure-mode-hook 'lsp)
     (add-hook 'clojurescript-mode-hook 'lsp)
@@ -301,7 +299,7 @@ when email comes in."
 
 
 (deffeature emacs-lisp
-  (add-hook 'lisp-mode-hook #'enable-paredit-mode))
+  )
 
 
 (deffeature common-lisp
@@ -311,7 +309,6 @@ when email comes in."
 
 (deffeature purescript
   (use-package purescript-mode
-    :defer t
     :init
     (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)))
 
@@ -378,10 +375,7 @@ when email comes in."
 
 (deffeature lsp
   (use-package lsp-mode)
-  (use-package lsp-ui)
-
-  (lsp-treemacs-sync-mode 1))
-
+  (use-package lsp-ui))
 
 
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -467,3 +461,5 @@ point and the next paren/brace."
 
 (if (not (boundp 'enabled-features))
     (error "enabled-features list not set, available features are \n%s" (mapconcat #'symbol-name (reverse available-features) "\n")))
+
+(provide 'features)
