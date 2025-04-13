@@ -1,3 +1,5 @@
+;;; home-nixos-desktop.el --- NixOS desktop configuration -*- lexical-binding: t -*-
+
 ;; Run emacs server
 (server-start)
 
@@ -54,9 +56,11 @@
         editor-features
         email
         org
+        llms
         flycheck
         lsp
         clojure
+        go
         emacs-lisp
         javascript
         nixos

@@ -1,3 +1,4 @@
+;;; features.el --- Modular features for Emacs configuration -*- lexical-binding: t -*-
 
 (defvar available-features '())
 
@@ -171,18 +172,19 @@ when email comes in."
     (global-set-key (kbd "M-o") 'ace-window))
 
   (use-package helm
-    :bind (("M-x" . helm-M-x)
-           ("C-x C-f" . helm-find-files))
+    :bind (("M-x" . helm-M-x))
     :config
     (helm-mode 1))
 
   (use-package helm-projectile
+    :after (helm projectile)
     :config
     (helm-projectile-on))
 
   (use-package fzf
     :config
-    (global-set-key (kbd "C-c C-f") 'fzf-projectile))
+    ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
+    )
 
   (use-package magit
     :bind (("C-c m s" . magit-status))
@@ -195,17 +197,31 @@ when email comes in."
   (use-package company
     :hook ((emacs-lisp-mode clojure-mode) . company-mode)))
 
+(deffeature
+ llms
+ (straight-use-package 'gptel)
+
+ (setq claude
+       (gptel-make-anthropic "Claude"
+         :stream t
+         :key (lambda () (with-temp-buffer
+                           (insert-file-contents "/home/david/claude-api-key.txt")
+                           (buffer-string)))))
+
+ (setq
+  gptel-model 'claude-3-7-sonnet-20250219
+  gptel-backend claude))
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deffeature markdown
-  (defun set-autofill-hook ()
-    (if (string-equal "notes" (projectile-project-name))
-        (progn
-          (auto-fill-mode 't)
-          (set-fill-column 80))))
+            (defun set-autofill-hook ()
+              (if (string-equal "notes" (projectile-project-name))
+                  (progn
+                    (auto-fill-mode 't)
+                    (set-fill-column 80))))
 
-  (add-hook 'markdown-mode-hook 'set-autofill-hook))
+            (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
 
 (deffeature rust
@@ -213,49 +229,52 @@ when email comes in."
     :defer t
     :mode "\\.rs\\'"))
 
+(deffeature
+ go
+ (use-package go-mode))
 
 (deffeature clojure
-  (use-package cider)
-  (use-package flycheck-clj-kondo)
+            (use-package cider)
+            (use-package flycheck-clj-kondo)
 
-  (defun clerk-show ()
-    (interactive)
-    (when-let
-        ((filename (buffer-file-name)))
-      (save-buffer)
-      (cider-interactive-eval
-       (concat "(nextjournal.clerk/show! \"" filename "\")"))))
+            (defun clerk-show ()
+              (interactive)
+              (when-let
+                  ((filename (buffer-file-name)))
+                (save-buffer)
+                (cider-interactive-eval
+                 (concat "(nextjournal.clerk/show! \"" filename "\")"))))
 
-  (use-package rainbow-delimiters)
+            (use-package rainbow-delimiters)
 
-  (use-package clojure-mode
-    :init
-    (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
-    (add-hook 'clojure-mode-hook 'lsp)
-    (add-hook 'clojurescript-mode-hook 'lsp)
-    (add-hook 'clojurec-mode-hook 'lsp)
-    (add-hook 'before-save-hook 'cider-format-buffer t t)
+            (use-package clojure-mode
+              :init
+              (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+              (add-hook 'clojure-mode-hook 'lsp)
+              (add-hook 'clojurescript-mode-hook 'lsp)
+              (add-hook 'clojurec-mode-hook 'lsp)
+              (add-hook 'before-save-hook 'cider-format-buffer t t)
 
-    :config
-    (require 'flycheck-clj-kondo)
-    (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
+              :config
+              (require 'flycheck-clj-kondo)
+              (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
 
-  (defun dack-cider-eval-last-sexp-and-replace-formatted ()
-    (interactive)
-    (cider-eval-last-sexp-and-replace)
-    (cider-format-edn-last-sexp))
+            (defun dack-cider-eval-last-sexp-and-replace-formatted ()
+              (interactive)
+              (cider-eval-last-sexp-and-replace)
+              (cider-format-edn-last-sexp))
 
-  (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
+            (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
 
-  (defun dack-open-cnp ()
-    (interactive)
-    (find-file "~/code/cnp/src/main/cnp/app.cljs")
-    (cider-connect-cljs '(:host "localhost"
-                                :port "37695"
-                                :project-dir "~/code/cnp"
-                                :cljs-repl-type shadow-select)))
+            (defun dack-open-cnp ()
+              (interactive)
+              (find-file "~/code/cnp/src/main/cnp/app.cljs")
+              (cider-connect-cljs '(:host "localhost"
+                                          :port "37695"
+                                          :project-dir "~/code/cnp"
+                                          :cljs-repl-type shadow-select)))
 
-  (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
+            (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
 
 
 (deffeature emacs-lisp
