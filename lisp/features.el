@@ -1,18 +1,7 @@
 ;;; features.el --- Modular features for Emacs configuration -*- lexical-binding: t -*-
 
-(defvar available-features '())
-
-(defmacro deffeature (name &rest body)
-  `(progn
-     (add-to-list 'available-features ',name)
-     (when (and (boundp 'enabled-features) (member ',name enabled-features))
-       ,@body)))
-
-
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(deffeature
- look-and-feel
-
+(defun look-and-feel ()
  (straight-use-package 'dracula-theme)
  (load-theme 'dracula t)
 
@@ -49,9 +38,7 @@
 
  (set-face-attribute 'default nil :height 100))
 
-(deffeature
- org
-
+(defun org ()
  (setq org-log-done 'time)
  (setq org-todo-keywords
        '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
@@ -60,7 +47,7 @@
 
 ;;; Editor Features ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deffeature email
+(defun email ()
   (autoload 'notmuch "notmuch" "notmuch mail" t)
   (setq email-tags-file "/home/david/code/notmuch-tags/notmuch-tags.edn")
 
@@ -150,7 +137,7 @@ when email comes in."
 (global-set-key (kbd "M-C-S") 'make-save-commit)
 
 
-(deffeature editor-features
+(defun editor-features ()
   (straight-use-package 'projectile)
   ;; Init
   (setq projectile-indexing-method 'alien)
@@ -193,8 +180,7 @@ when email comes in."
   (add-hook 'emacs-lisp-mode-hook #'company-mode)
   (add-hook 'clojure-mode-hook #'company-mode))
 
-(deffeature
- llms
+(defun llms ()
  (straight-use-package 'gptel)
 
  (setq claude
@@ -210,7 +196,7 @@ when email comes in."
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deffeature markdown
+(defun markdown ()
             (defun set-autofill-hook ()
               (if (string-equal "notes" (projectile-project-name))
                   (progn
@@ -220,15 +206,14 @@ when email comes in."
             (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
 
-(deffeature rust
+(defun rust ()
   (straight-use-package 'rust-mode)
   (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode)))
 
-(deffeature
- go
+(defun go ()
  (straight-use-package 'go-mode))
 
-(deffeature clojure
+(defun clojure ()
             (straight-use-package 'cider)
             (straight-use-package 'flycheck-clj-kondo)
 
@@ -274,21 +259,21 @@ when email comes in."
             (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
 
 
-(deffeature emacs-lisp
+(defun emacs-lisp ()
   )
 
 
-(deffeature common-lisp
+(defun common-lisp ()
   (straight-use-package 'slime)
   (setq inferior-lisp-program "sbcl"))
 
 
-(deffeature purescript
+(defun purescript ()
   (straight-use-package 'purescript-mode)
   (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation))
 
 
-(deffeature haskell
+(defun haskell ()
   (defun haskell-save-hook ()
     (message "haskell save hook running")
     (haskell-align-imports)
@@ -309,7 +294,7 @@ when email comes in."
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
 
-(deffeature llms
+(defun llms-ollama ()
   (straight-use-package 'ellama)
   (setopt ellama-language "English")
   (require 'llm-ollama)
@@ -318,7 +303,7 @@ when email comes in."
            :chat-model "mixtral" :embedding-model "mixtral")))
 
 
-(deffeature ruby
+(defun ruby ()
   (straight-use-package 'ruby-mode)
   (defun my-ruby-mode-hook ()
     (set-fill-column 80)
@@ -327,25 +312,25 @@ when email comes in."
   (add-hook 'ruby-mode-hook 'my-ruby-mode-hook))
 
 
-(deffeature javascript
+(defun javascript ()
   (straight-use-package 'rjsx-mode)
   (setq js-indent-level 2)
   (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
 
 
-(deffeature typescript
+(defun typescript ()
   (straight-use-package 'typescript-mode))
 
 
-(deffeature nixos
+(defun nixos ()
   (straight-use-package 'nix-mode))
 
 
-(deffeature flycheck
+(defun flycheck ()
   (straight-use-package 'flycheck))
 
 
-(deffeature lsp
+(defun lsp ()
   (straight-use-package 'lsp-mode)
   (straight-use-package 'lsp-ui))
 
@@ -430,7 +415,4 @@ point and the next paren/brace."
   (process-send-eof process))
 
 
-(if (not (boundp 'enabled-features))
-    (error "enabled-features list not set, available features are \n%s" (mapconcat #'symbol-name (reverse available-features) "\n")))
-
-;(provide 'features)
+(provide 'features)
