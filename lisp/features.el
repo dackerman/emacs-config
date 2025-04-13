@@ -13,9 +13,8 @@
 (deffeature
  look-and-feel
 
- (use-package dracula-theme
-   :config
-   (load-theme 'dracula t))
+ (straight-use-package 'dracula-theme)
+ (load-theme 'dracula t)
 
  (menu-bar-mode -1)
  (scroll-bar-mode -1)
@@ -152,50 +151,47 @@ when email comes in."
 
 
 (deffeature editor-features
-  (use-package projectile
-    :init
-    (setq projectile-indexing-method 'alien)
-    (setq projectile-use-git-grep t)
-    (setq helm-projectile-fuzzy-match nil)
-    (setq projectile-tags-command "/usr/local/bin/ctags -Re -f \"%s\" %s")
-    (add-hook 'before-save-hook 'delete-trailing-whitespace)
-    :config
-    (projectile-mode +1)
-    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-    )
+  (straight-use-package 'projectile)
+  ;; Init
+  (setq projectile-indexing-method 'alien)
+  (setq projectile-use-git-grep t)
+  (setq helm-projectile-fuzzy-match nil)
+  (setq projectile-tags-command "/usr/local/bin/ctags -Re -f \"%s\" %s")
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+  ;; Config
+  (projectile-mode +1)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
-  (use-package paredit
-    :hook ((emacs-lisp-mode clojure-mode) . paredit-mode))
+  (straight-use-package 'paredit)
+  (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
+  (add-hook 'clojure-mode-hook #'paredit-mode)
 
-  (use-package ace-window
-    :config
-    (global-set-key (kbd "M-o") 'ace-window))
+  (straight-use-package 'ace-window)
+  (global-set-key (kbd "M-o") 'ace-window)
 
-  (use-package helm
-    :bind (("M-x" . helm-M-x))
-    :config
-    (helm-mode 1))
+  (straight-use-package 'helm)
+  (global-set-key (kbd "M-x") 'helm-M-x)
+  (helm-mode 1)
 
-  (use-package helm-projectile
-    :after (helm projectile)
-    :config
-    (helm-projectile-on))
+  (straight-use-package 'helm-projectile)
+  (with-eval-after-load 'helm
+    (with-eval-after-load 'projectile
+      (helm-projectile-on)))
 
-  (use-package fzf
-    :config
-    ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
-    )
+  (straight-use-package 'fzf)
+  ;; Commented out configuration
+  ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
 
-  (use-package magit
-    :bind (("C-c m s" . magit-status))
-    :config (setq magit-save-repository-buffers 'dontask))
+  (straight-use-package 'magit)
+  (global-set-key (kbd "C-c m s") 'magit-status)
+  (setq magit-save-repository-buffers 'dontask)
 
-  (use-package keychain-environment
-    :config
-    (keychain-refresh-environment))
+  (straight-use-package 'keychain-environment)
+  (keychain-refresh-environment)
 
-  (use-package company
-    :hook ((emacs-lisp-mode clojure-mode) . company-mode)))
+  (straight-use-package 'company)
+  (add-hook 'emacs-lisp-mode-hook #'company-mode)
+  (add-hook 'clojure-mode-hook #'company-mode))
 
 (deffeature
  llms
@@ -225,17 +221,16 @@ when email comes in."
 
 
 (deffeature rust
-  (use-package rust-mode
-    :defer t
-    :mode "\\.rs\\'"))
+  (straight-use-package 'rust-mode)
+  (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode)))
 
 (deffeature
  go
- (use-package go-mode))
+ (straight-use-package 'go-mode))
 
 (deffeature clojure
-            (use-package cider)
-            (use-package flycheck-clj-kondo)
+            (straight-use-package 'cider)
+            (straight-use-package 'flycheck-clj-kondo)
 
             (defun clerk-show ()
               (interactive)
@@ -245,17 +240,19 @@ when email comes in."
                 (cider-interactive-eval
                  (concat "(nextjournal.clerk/show! \"" filename "\")"))))
 
-            (use-package rainbow-delimiters)
+            (straight-use-package 'rainbow-delimiters)
 
-            (use-package clojure-mode
-              :init
-              (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
-              (add-hook 'clojure-mode-hook 'lsp)
-              (add-hook 'clojurescript-mode-hook 'lsp)
-              (add-hook 'clojurec-mode-hook 'lsp)
-              (add-hook 'before-save-hook 'cider-format-buffer t t)
+            (straight-use-package 'clojure-mode)
+            
+            ;; Init
+            (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+            (add-hook 'clojure-mode-hook 'lsp)
+            (add-hook 'clojurescript-mode-hook 'lsp)
+            (add-hook 'clojurec-mode-hook 'lsp)
+            (add-hook 'before-save-hook 'cider-format-buffer t t)
 
-              :config
+            ;; Config
+            (with-eval-after-load 'clojure-mode
               (require 'flycheck-clj-kondo)
               (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
 
@@ -282,14 +279,13 @@ when email comes in."
 
 
 (deffeature common-lisp
-  (use-package slime)
+  (straight-use-package 'slime)
   (setq inferior-lisp-program "sbcl"))
 
 
 (deffeature purescript
-  (use-package purescript-mode
-    :init
-    (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)))
+  (straight-use-package 'purescript-mode)
+  (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation))
 
 
 (deffeature haskell
@@ -303,58 +299,55 @@ when email comes in."
     (message "haskell hook")
     (add-hook 'before-save-hook 'haskell-save-hook))
 
-  (use-package intero
-    :config
-    (message "configuring intero")
-    (add-hook 'haskell-mode-hook 'intero-mode))
+  (straight-use-package 'intero)
+  (message "configuring intero")
+  (add-hook 'haskell-mode-hook 'intero-mode)
 
-  (use-package haskell-mode)
+  (straight-use-package 'haskell-mode)
 
   (message "setting haskell-mode-hook ")
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
 
 (deffeature llms
-  (use-package ellama
-    :init
-    (setopt ellama-language "English")
-    (require 'llm-ollama)
-    (setopt ellama-provider
-	    (make-llm-ollama
-	     :chat-model "mixtral" :embedding-model "mixtral"))))
+  (straight-use-package 'ellama)
+  (setopt ellama-language "English")
+  (require 'llm-ollama)
+  (setopt ellama-provider
+          (make-llm-ollama
+           :chat-model "mixtral" :embedding-model "mixtral")))
 
 
 (deffeature ruby
-  (use-package ruby-mode
-    :config
-    (defun my-ruby-mode-hook ()
-      (set-fill-column 80)
-      (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local)
-      (setq ruby-insert-encoding-magic-comment nil))
-    (add-hook 'ruby-mode-hook 'my-ruby-mode-hook)))
+  (straight-use-package 'ruby-mode)
+  (defun my-ruby-mode-hook ()
+    (set-fill-column 80)
+    (add-hook 'before-save-hook 'delete-trailing-whitespace nil 'local)
+    (setq ruby-insert-encoding-magic-comment nil))
+  (add-hook 'ruby-mode-hook 'my-ruby-mode-hook))
 
 
 (deffeature javascript
-  (use-package rjsx-mode)
+  (straight-use-package 'rjsx-mode)
   (setq js-indent-level 2)
   (add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode)))
 
 
 (deffeature typescript
-  (use-package typescript-mode))
+  (straight-use-package 'typescript-mode))
 
 
 (deffeature nixos
-  (use-package nix-mode))
+  (straight-use-package 'nix-mode))
 
 
 (deffeature flycheck
-  (use-package flycheck))
+  (straight-use-package 'flycheck))
 
 
 (deffeature lsp
-  (use-package lsp-mode)
-  (use-package lsp-ui))
+  (straight-use-package 'lsp-mode)
+  (straight-use-package 'lsp-ui))
 
 
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

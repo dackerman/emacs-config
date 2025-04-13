@@ -13,11 +13,9 @@
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
 
-  (setq straight-use-package-by-default 't)
+  ;(setq straight-use-package-by-default 't)
   (bootstrap-straight-el)
-  (straight-use-package 'use-package)
-  ;(require 'use-package-ensure)
-  ;(setq use-package-always-ensure t)
+  ;; No longer using use-package
   )
 
 (defun init-deprecated-package-el ()

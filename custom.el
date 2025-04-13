@@ -39,7 +39,7 @@
  '(nrepl-use-ssh-fallback-for-remote-hosts t)
  '(org-agenda-files '("~/code/cnp/TODO.org"))
  '(package-selected-packages
-   '(request prettier cuda-mode ellama html-to-hiccup slime multiple-cursors keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme use-package))
+   '(request prettier cuda-mode ellama html-to-hiccup slime multiple-cursors keychain-environment treemacs-projectile nord-theme lsp-dart dart-mode zig-mode paredit flycheck-clj-kondo company flycheck lsp-ui lsp-mode glsl-mode shader-mode notmuch ace-window markdown-mode nix-mode rainbow-delimiters cider typescript-mode yaml-mode rjsx-mode web-mode exec-path-from-shell purescript-mode rust-mode intero haskell-mode helm-projectile helm projectile fzf magit dracula-theme darktooth-theme))
  '(projectile-indexing-method 'hybrid)
  '(projectile-project-search-path '("~/code"))
  '(rmail-primary-inbox-list '("maildir:///home/david/mail/gmail/Inbox"))
