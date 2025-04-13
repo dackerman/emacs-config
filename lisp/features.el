@@ -1,42 +1,73 @@
 ;;; features.el --- Modular features for Emacs configuration -*- lexical-binding: t -*-
 
+ ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun package-setup ()
+  (setq default-directory "~/.emacs.d/")
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+
+  (bootstrap-straight-el)
+  )
+
+(defun bootstrap-straight-el ()
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name
+          "straight/repos/straight.el/bootstrap.el"
+          (or (bound-and-true-p straight-base-dir)
+              user-emacs-directory)))
+        (bootstrap-version 7))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage)))
+
+
+(package-setup)
+
+
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
- (straight-use-package 'dracula-theme)
- (load-theme 'dracula t)
+  (straight-use-package 'dracula-theme)
+  (load-theme 'dracula t)
 
- (menu-bar-mode -1)
- (scroll-bar-mode -1)
- (tool-bar-mode -1)
- (column-number-mode t)
- (global-display-line-numbers-mode 1)
- (show-paren-mode 1)
- (global-unset-key (kbd "C-z"))
- (global-set-key (kbd "s-q") 'fill-paragraph)
- (setq ring-bell-function 'ignore)
+  (menu-bar-mode -1)
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)
+  (column-number-mode t)
+  (global-display-line-numbers-mode 1)
+  (show-paren-mode 1)
+  (global-unset-key (kbd "C-z"))
+  (global-set-key (kbd "s-q") 'fill-paragraph)
+  (setq ring-bell-function 'ignore)
 
- (setq-default indent-tabs-mode nil)   ; tabs to spaces
- (setq inhibit-startup-message t
-       inhibit-startup-echo-area-message t
-       tab-width 2
-       scroll-step 1
-       kill-whole-line t
-       auto-save-timeout 10
-       auto-save-file-name-transforms (progn
-                                        (make-directory "~/.emacs.d/auto-save-files/" t)
-                                        `((".*" "~/.emacs.d/auto-save-files/" t)))
-       backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
-       make-backup-files nil
-       create-lockfiles nil
-       )
- (set-default 'truncate-lines t)
- (set-face-background 'trailing-whitespace "pink")
+  (setq-default indent-tabs-mode nil)   ; tabs to spaces
+  (setq inhibit-startup-message t
+        inhibit-startup-echo-area-message t
+        tab-width 2
+        scroll-step 1
+        kill-whole-line t
+        auto-save-timeout 10
+        auto-save-file-name-transforms (progn
+                                         (make-directory "~/.emacs.d/auto-save-files/" t)
+                                         `((".*" "~/.emacs.d/auto-save-files/" t)))
+        backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
+        make-backup-files nil
+        create-lockfiles nil
+        )
+  (set-default 'truncate-lines t)
+  (set-face-background 'trailing-whitespace "pink")
 
- ;; font
- (when (and window-system custom-font)
-   (add-to-list 'default-frame-alist `(font . ,custom-font)))
+  ;; font
+  (when (and window-system custom-font)
+    (add-to-list 'default-frame-alist `(font . ,custom-font)))
 
- (set-face-attribute 'default nil :height 100))
+  (set-face-attribute 'default nil :height 100))
 
 (defun org ()
  (setq org-log-done 'time)
@@ -228,7 +259,7 @@ when email comes in."
             (straight-use-package 'rainbow-delimiters)
 
             (straight-use-package 'clojure-mode)
-            
+
             ;; Init
             (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
             (add-hook 'clojure-mode-hook 'lsp)
