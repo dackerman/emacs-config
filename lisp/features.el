@@ -192,6 +192,7 @@ when email comes in."
   (helm-mode 1)
 
   (straight-use-package 'helm-projectile)
+  (require 'helm-projectile)
   (with-eval-after-load 'helm
     (with-eval-after-load 'projectile
       (helm-projectile-on)))
@@ -350,7 +351,19 @@ when email comes in."
 
 
 (defun typescript ()
-  (straight-use-package 'typescript-mode))
+  (straight-use-package 'typescript-mode)
+  
+  ;; Debug hook to verify LSP setup
+  (defun ts-mode-setup ()
+    (message "TypeScript mode hook running, activating LSP")
+    (lsp))
+  
+  (add-hook 'typescript-mode-hook 'ts-mode-setup)
+  
+  ;; TypeScript language server configuration
+  (with-eval-after-load 'lsp-mode
+    (setq lsp-typescript-server-args '("--stdio" "--tsserver-log-file" "/tmp/ts-logs.txt"))
+    (setq lsp-clients-typescript-server-args '("--stdio"))))
 
 
 (defun nixos ()
@@ -363,7 +376,17 @@ when email comes in."
 
 (defun lsp ()
   (straight-use-package 'lsp-mode)
-  (straight-use-package 'lsp-ui))
+  (straight-use-package 'lsp-ui)
+  
+  ;; Configure LSP mode
+  (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-enable-which-key t)
+  (setq lsp-headerline-breadcrumb-enable t)
+  (setq lsp-signature-auto-activate t)
+  
+  ;; Configure LSP UI
+  (setq lsp-ui-doc-enable t)
+  (setq lsp-ui-sideline-enable t))
 
 
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

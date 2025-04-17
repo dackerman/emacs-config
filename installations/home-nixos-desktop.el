@@ -20,7 +20,6 @@
 (llms)
 (llms-ollama)
 (flycheck)
-(lsp)
 (clojure)
 (go)
 (emacs-lisp)
@@ -28,3 +27,4 @@
 (typescript)
 (nixos)
 (markdown)
+(lsp)
