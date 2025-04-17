@@ -330,15 +330,6 @@ when email comes in."
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
 
-(defun llms-ollama ()
-  (straight-use-package 'ellama)
-  (setq ellama-language "English")
-  (require 'llm-ollama)
-  (setq ellama-provider
-        (make-llm-ollama
-         :chat-model "mixtral" :embedding-model "mixtral")))
-
-
 (defun ruby ()
   (straight-use-package 'ruby-mode)
   (defun my-ruby-mode-hook ()

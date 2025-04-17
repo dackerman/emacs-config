@@ -18,7 +18,7 @@
 (email)
 (org)
 (llms)
-(llms-ollama)
+(llms-ellama)
 (flycheck)
 (clojure)
 (go)
