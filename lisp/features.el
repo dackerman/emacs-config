@@ -69,7 +69,6 @@
   (set-face-attribute 'default nil :height 100))
 
 (defun org ()
-  (straight-use-package 'org)
   (setq org-log-done 'time
         org-todo-keywords
         '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
@@ -495,7 +494,7 @@ point and the next paren/brace."
                       (insert output))))))
     (when input
       (pipe-content-to-process process input))
-    process)))
+    process))
 
 
 (defun pipe-content-to-process (process content)
