@@ -18,7 +18,6 @@
 (email)
 (org)
 (llms)
-(llms-ellama)
 (flycheck)
 (clojure)
 (go)

@@ -212,19 +212,51 @@ when email comes in."
   (add-hook 'emacs-lisp-mode-hook #'company-mode)
   (add-hook 'clojure-mode-hook #'company-mode))
 
+(defun file-to-string (path)
+  (with-temp-buffer
+    (insert-file-contents path)
+    (string-trim (buffer-string))))
+
+(file-to-string "~/gemini-api-key.txt")
+
 (defun llms ()
   (straight-use-package 'gptel)
 
+  ;; API keys
+  (setq claude-api-key (file-to-string "~/claude-api-key.txt"))
+  (setq openai-api-key (file-to-string "~/openai.txt"))
+  (setq gemini-api-key (file-to-string "~/gemini-api-key.txt"))
+
+  ;; Claude backend
   (setq claude
         (gptel-make-anthropic "Claude"
           :stream t
-          :key (lambda () (with-temp-buffer
-                            (insert-file-contents "/home/david/claude-api-key.txt")
-                            (buffer-string)))))
+          :key claude-api-key
+          :models '(claude-3-7-sonnet-20250219)))
 
-  (setq
-   gptel-model 'claude-3-7-sonnet-20250219
-   gptel-backend claude))
+  ;; OpenAI backends
+  (setq openai
+        (gptel-make-openai "OpenAI"
+          :stream t
+          :key openai-api-key
+          :models '(04-mini)))
+
+  (setq gemini
+        (gptel-make-gemini "Gemini"
+          :stream t
+          :key gemini-api-key))
+
+
+  ;; Keybindings for quick access
+  (global-set-key (kbd "C-c g") 'gptel)
+  (global-set-key (kbd "C-c s") 'gptel-send)
+
+  ;; Default settings
+  (setq gptel-model 'claude-3-7-sonnet-20250219
+        gptel-backend claude
+        gptel-default-mode 'org-mode
+        gptel-display-buffer-action '(display-buffer-at-bottom)))
+
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
