@@ -3,12 +3,11 @@
  ;;; Package Setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun package-setup ()
-  (setq default-directory "~/.emacs.d/")
-  (setq custom-file "~/.emacs.d/custom.el")
+  (setq default-directory "~/.emacs.d/"
+        custom-file "~/.emacs.d/custom.el")
   (load custom-file)
 
-  (bootstrap-straight-el)
-  )
+  (bootstrap-straight-el))
 
 (defun bootstrap-straight-el ()
   (defvar bootstrap-version)
@@ -70,8 +69,9 @@
   (set-face-attribute 'default nil :height 100))
 
 (defun org ()
-  (setq org-log-done 'time)
-  (setq org-todo-keywords
+  (straight-use-package 'org)
+  (setq org-log-done 'time
+        org-todo-keywords
         '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
 
 
@@ -229,11 +229,12 @@ when email comes in."
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun markdown ()
+  (straight-use-package 'markdown-mode)
+
   (defun set-autofill-hook ()
-    (if (string-equal "notes" (projectile-project-name))
-        (progn
-          (auto-fill-mode 't)
-          (set-fill-column 80))))
+    (when (string-equal "notes" (projectile-project-name))
+      (auto-fill-mode 1)
+      (set-fill-column 80)))
 
   (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
@@ -248,47 +249,47 @@ when email comes in."
 (defun clojure ()
   (straight-use-package 'cider)
   (straight-use-package 'flycheck-clj-kondo)
+  (straight-use-package 'rainbow-delimiters)
+  (straight-use-package 'clojure-mode)
 
   (defun clerk-show ()
+    "Show the current buffer in Clerk."
     (interactive)
-    (when-let
-        ((filename (buffer-file-name)))
+    (when-let ((filename (buffer-file-name)))
       (save-buffer)
       (cider-interactive-eval
        (concat "(nextjournal.clerk/show! \"" filename "\")"))))
 
-  (straight-use-package 'rainbow-delimiters)
+  (defun dack-cider-eval-last-sexp-and-replace-formatted ()
+    "Evaluate last sexp, replace it with the result, and format it."
+    (interactive)
+    (cider-eval-last-sexp-and-replace)
+    (cider-format-edn-last-sexp))
 
-  (straight-use-package 'clojure-mode)
+  (defun dack-open-cnp ()
+    "Open CNP project and connect to its REPL."
+    (interactive)
+    (find-file "~/code/cnp/src/main/cnp/app.cljs")
+    (cider-connect-cljs '(:host "localhost"
+                          :port "37695"
+                          :project-dir "~/code/cnp"
+                          :cljs-repl-type shadow-select)))
 
-  ;; Init
+  ;; Mode hooks
   (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
   (add-hook 'clojure-mode-hook 'lsp)
   (add-hook 'clojurescript-mode-hook 'lsp)
   (add-hook 'clojurec-mode-hook 'lsp)
   (add-hook 'before-save-hook 'cider-format-buffer t t)
 
-  ;; Config
+  ;; Key bindings
+  (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
+  (global-set-key (kbd "C-c C-d c") 'dack-open-cnp)
+
+  ;; Config after mode loads
   (with-eval-after-load 'clojure-mode
     (require 'flycheck-clj-kondo)
-    (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
-
-  (defun dack-cider-eval-last-sexp-and-replace-formatted ()
-    (interactive)
-    (cider-eval-last-sexp-and-replace)
-    (cider-format-edn-last-sexp))
-
-  (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
-
-  (defun dack-open-cnp ()
-    (interactive)
-    (find-file "~/code/cnp/src/main/cnp/app.cljs")
-    (cider-connect-cljs '(:host "localhost"
-                                :port "37695"
-                                :project-dir "~/code/cnp"
-                                :cljs-repl-type shadow-select)))
-
-  (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
+    (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show)))
 
 
 (defun emacs-lisp ()
@@ -312,33 +313,30 @@ when email comes in."
 
 
 (defun haskell ()
+  (straight-use-package 'haskell-mode)
+  (straight-use-package 'intero)
+
   (defun haskell-save-hook ()
-    (message "haskell save hook running")
+    "Format Haskell code before saving."
     (haskell-align-imports)
     (haskell-sort-imports)
     (delete-trailing-whitespace))
 
   (defun my-haskell-hook ()
-    (message "haskell hook")
-    (add-hook 'before-save-hook 'haskell-save-hook))
+    "Setup hook for Haskell mode."
+    (add-hook 'before-save-hook 'haskell-save-hook nil t))
 
-  (straight-use-package 'intero)
-  (message "configuring intero")
   (add-hook 'haskell-mode-hook 'intero-mode)
-
-  (straight-use-package 'haskell-mode)
-
-  (message "setting haskell-mode-hook ")
   (add-hook 'haskell-mode-hook 'my-haskell-hook))
 
 
 (defun llms-ollama ()
   (straight-use-package 'ellama)
-  (setopt ellama-language "English")
+  (setq ellama-language "English")
   (require 'llm-ollama)
-  (setopt ellama-provider
-          (make-llm-ollama
-           :chat-model "mixtral" :embedding-model "mixtral")))
+  (setq ellama-provider
+        (make-llm-ollama
+         :chat-model "mixtral" :embedding-model "mixtral")))
 
 
 (defun ruby ()
@@ -460,26 +458,27 @@ point and the next paren/brace."
 (defun sync-packages ()
   (interactive)
   (package-install-selected-packages)
-  (initialize-user-config)
-  )
+  (initialize-user-config))
 
 (defun shell-command-to-buffer (command-list input)
   "Execute COMMAND with INPUT and stream output to current buffer."
-  (let* ((process (make-process
-                   :name "shell-command-process"
-                   :buffer (current-buffer)
-                   :command command-list
-
-                   :filter
-                   (lambda (proc output)
-                     (message "filtering %s" output)
-                     (with-current-buffer (process-buffer proc)
-                       (goto-char (point-max))
-                       (insert output))))))))
+  (let ((process (make-process
+                  :name "shell-command-process"
+                  :buffer (current-buffer)
+                  :command command-list
+                  :filter
+                  (lambda (proc output)
+                    (message "filtering %s" output)
+                    (with-current-buffer (process-buffer proc)
+                      (goto-char (point-max))
+                      (insert output))))))
+    (when input
+      (pipe-content-to-process process input))
+    process)))
 
 
 (defun pipe-content-to-process (process content)
-  (process-send-string process (concat cnotent "\n"))
+  (process-send-string process (concat content "\n"))
   (process-send-eof process))
 
 
