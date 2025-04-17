@@ -70,9 +70,9 @@
   (set-face-attribute 'default nil :height 100))
 
 (defun org ()
- (setq org-log-done 'time)
- (setq org-todo-keywords
-       '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
+  (setq org-log-done 'time)
+  (setq org-todo-keywords
+        '((sequence "TODO" "DOING(!/!)" "|" "DONE"))))
 
 
 
@@ -89,8 +89,8 @@
 
 
   (add-hook 'notmuch-show-mode-hook
-          (lambda ()
-            (define-key notmuch-show-mode-map "\.v" 'open-mime-in-browser)))
+            (lambda ()
+              (define-key notmuch-show-mode-map "\.v" 'open-mime-in-browser)))
 
   (defun notmuch-apply-address-filters ()
     (interactive)
@@ -199,7 +199,7 @@ when email comes in."
 
   (straight-use-package 'fzf)
   ;; Commented out configuration
-  ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
+                                        ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
 
   (straight-use-package 'magit)
   (global-set-key (kbd "C-c m s") 'magit-status)
@@ -213,29 +213,29 @@ when email comes in."
   (add-hook 'clojure-mode-hook #'company-mode))
 
 (defun llms ()
- (straight-use-package 'gptel)
+  (straight-use-package 'gptel)
 
- (setq claude
-       (gptel-make-anthropic "Claude"
-         :stream t
-         :key (lambda () (with-temp-buffer
-                           (insert-file-contents "/home/david/claude-api-key.txt")
-                           (buffer-string)))))
+  (setq claude
+        (gptel-make-anthropic "Claude"
+          :stream t
+          :key (lambda () (with-temp-buffer
+                            (insert-file-contents "/home/david/claude-api-key.txt")
+                            (buffer-string)))))
 
- (setq
-  gptel-model 'claude-3-7-sonnet-20250219
-  gptel-backend claude))
+  (setq
+   gptel-model 'claude-3-7-sonnet-20250219
+   gptel-backend claude))
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun markdown ()
-            (defun set-autofill-hook ()
-              (if (string-equal "notes" (projectile-project-name))
-                  (progn
-                    (auto-fill-mode 't)
-                    (set-fill-column 80))))
+  (defun set-autofill-hook ()
+    (if (string-equal "notes" (projectile-project-name))
+        (progn
+          (auto-fill-mode 't)
+          (set-fill-column 80))))
 
-            (add-hook 'markdown-mode-hook 'set-autofill-hook))
+  (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
 
 (defun rust ()
@@ -243,56 +243,62 @@ when email comes in."
   (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode)))
 
 (defun go ()
- (straight-use-package 'go-mode))
+  (straight-use-package 'go-mode))
 
 (defun clojure ()
-            (straight-use-package 'cider)
-            (straight-use-package 'flycheck-clj-kondo)
+  (straight-use-package 'cider)
+  (straight-use-package 'flycheck-clj-kondo)
 
-            (defun clerk-show ()
-              (interactive)
-              (when-let
-                  ((filename (buffer-file-name)))
-                (save-buffer)
-                (cider-interactive-eval
-                 (concat "(nextjournal.clerk/show! \"" filename "\")"))))
+  (defun clerk-show ()
+    (interactive)
+    (when-let
+        ((filename (buffer-file-name)))
+      (save-buffer)
+      (cider-interactive-eval
+       (concat "(nextjournal.clerk/show! \"" filename "\")"))))
 
-            (straight-use-package 'rainbow-delimiters)
+  (straight-use-package 'rainbow-delimiters)
 
-            (straight-use-package 'clojure-mode)
+  (straight-use-package 'clojure-mode)
 
-            ;; Init
-            (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
-            (add-hook 'clojure-mode-hook 'lsp)
-            (add-hook 'clojurescript-mode-hook 'lsp)
-            (add-hook 'clojurec-mode-hook 'lsp)
-            (add-hook 'before-save-hook 'cider-format-buffer t t)
+  ;; Init
+  (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
+  (add-hook 'clojure-mode-hook 'lsp)
+  (add-hook 'clojurescript-mode-hook 'lsp)
+  (add-hook 'clojurec-mode-hook 'lsp)
+  (add-hook 'before-save-hook 'cider-format-buffer t t)
 
-            ;; Config
-            (with-eval-after-load 'clojure-mode
-              (require 'flycheck-clj-kondo)
-              (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
+  ;; Config
+  (with-eval-after-load 'clojure-mode
+    (require 'flycheck-clj-kondo)
+    (define-key clojure-mode-map (kbd "<M-return>") 'clerk-show))
 
-            (defun dack-cider-eval-last-sexp-and-replace-formatted ()
-              (interactive)
-              (cider-eval-last-sexp-and-replace)
-              (cider-format-edn-last-sexp))
+  (defun dack-cider-eval-last-sexp-and-replace-formatted ()
+    (interactive)
+    (cider-eval-last-sexp-and-replace)
+    (cider-format-edn-last-sexp))
 
-            (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
+  (global-set-key (kbd "C-c C-v f") 'dack-cider-eval-last-sexp-and-replace-formatted)
 
-            (defun dack-open-cnp ()
-              (interactive)
-              (find-file "~/code/cnp/src/main/cnp/app.cljs")
-              (cider-connect-cljs '(:host "localhost"
-                                          :port "37695"
-                                          :project-dir "~/code/cnp"
-                                          :cljs-repl-type shadow-select)))
+  (defun dack-open-cnp ()
+    (interactive)
+    (find-file "~/code/cnp/src/main/cnp/app.cljs")
+    (cider-connect-cljs '(:host "localhost"
+                                :port "37695"
+                                :project-dir "~/code/cnp"
+                                :cljs-repl-type shadow-select)))
 
-            (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
+  (global-set-key (kbd "C-c C-d c") 'dack-open-cnp))
 
 
 (defun emacs-lisp ()
-  )
+  (defun format-emacs-lisp-buffer ()
+    (when (eq major-mode 'emacs-lisp-mode)
+      (indent-region (point-min) (point-max))))
+
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook 'format-emacs-lisp-buffer nil t))))
 
 
 (defun common-lisp ()
@@ -352,14 +358,22 @@ when email comes in."
 
 (defun typescript ()
   (straight-use-package 'typescript-mode)
-  
+
   ;; Debug hook to verify LSP setup
   (defun ts-mode-setup ()
     (message "TypeScript mode hook running, activating LSP")
     (lsp))
-  
+
+  ;; Format on save for TypeScript
+  (defun format-typescript-buffer ()
+    (when (eq major-mode 'typescript-mode)
+      (lsp-format-buffer)))
+
   (add-hook 'typescript-mode-hook 'ts-mode-setup)
-  
+  (add-hook 'typescript-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook 'format-typescript-buffer nil t)))
+
   ;; TypeScript language server configuration
   (with-eval-after-load 'lsp-mode
     (setq lsp-typescript-server-args '("--stdio" "--tsserver-log-file" "/tmp/ts-logs.txt"))
@@ -377,13 +391,13 @@ when email comes in."
 (defun lsp ()
   (straight-use-package 'lsp-mode)
   (straight-use-package 'lsp-ui)
-  
+
   ;; Configure LSP mode
   (setq lsp-keymap-prefix "C-c l")
   (setq lsp-enable-which-key t)
   (setq lsp-headerline-breadcrumb-enable t)
   (setq lsp-signature-auto-activate t)
-  
+
   ;; Configure LSP UI
   (setq lsp-ui-doc-enable t)
   (setq lsp-ui-sideline-enable t))
