@@ -276,7 +276,18 @@ when email comes in."
   (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode)))
 
 (defun go ()
-  (straight-use-package 'go-mode))
+  (straight-use-package 'go-mode)
+
+  ;; Format on save for Go
+  (defun format-go-buffer ()
+    (when (eq major-mode 'go-mode)
+      (lsp-format-buffer)))
+
+  (add-hook 'go-mode-hook 'lsp)
+  (add-hook 'go-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook 'format-go-buffer nil t))))
+
 
 (defun clojure ()
   (straight-use-package 'cider)
@@ -303,9 +314,9 @@ when email comes in."
     (interactive)
     (find-file "~/code/cnp/src/main/cnp/app.cljs")
     (cider-connect-cljs '(:host "localhost"
-                          :port "37695"
-                          :project-dir "~/code/cnp"
-                          :cljs-repl-type shadow-select)))
+                                :port "37695"
+                                :project-dir "~/code/cnp"
+                                :cljs-repl-type shadow-select)))
 
   ;; Mode hooks
   (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
