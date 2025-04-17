@@ -24,6 +24,5 @@
 (emacs-lisp)
 (javascript)
 (typescript)
-(nixos)
 (markdown)
 (lsp)

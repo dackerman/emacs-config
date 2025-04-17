@@ -412,9 +412,6 @@ when email comes in."
     (setq lsp-clients-typescript-server-args '("--stdio"))))
 
 
-(defun nixos ()
-  (straight-use-package 'nix-mode))
-
 
 (defun flycheck ()
   (straight-use-package 'flycheck))
@@ -448,12 +445,6 @@ when email comes in."
   (delete-file (buffer-file-name))
   (kill-buffer))
 
-(defun open-nixos-config ()
-  (interactive)
-  (switch-to-buffer
-   (find-file-noselect
-    "/home/david/code/nixos-config/etc/nixos/configuration.nix")))
-
 (defun open-emacs-config ()
   "Opens my Emacs configuration."
   (interactive)
@@ -476,10 +467,6 @@ point and the next paren/brace."
 (defun handle-in-google-chrome (handle)
   (mm-display-external handle "google-chrome-stable %s"))
 
-
-(defun nixos-rebuild ()
-  (interactive)
-  (sudo-shell-command "*nixos-rebuild*" "nixos-rebuild switch"))
 
 
 (defun sudo-shell-command (name command)
