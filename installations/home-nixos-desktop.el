@@ -25,5 +25,6 @@
 (go)
 (emacs-lisp)
 (javascript)
+(typescript)
 (nixos)
 (markdown)
