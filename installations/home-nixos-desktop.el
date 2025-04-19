@@ -13,7 +13,6 @@
 (load "~/.emacs.d/lisp/features")
 
 ;; Call feature functions directly
-(lsp)
 (look-and-feel)
 (editor-features)
 (email)
@@ -25,4 +24,7 @@
 (emacs-lisp)
 (javascript)
 (typescript)
+(python)
+(rust)
 (markdown)
+(lsp)

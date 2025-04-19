@@ -168,24 +168,37 @@ when email comes in."
 
 
 (defun editor-features ()
+  ;; Project management
   (straight-use-package 'projectile)
-  ;; Init
   (setq projectile-indexing-method 'alien)
   (setq projectile-use-git-grep t)
-  (setq helm-projectile-fuzzy-match nil)
   (setq projectile-tags-command "/usr/local/bin/ctags -Re -f \"%s\" %s")
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
-  ;; Config
   (projectile-mode +1)
   (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
+  ;; Tree-based sidebar file explorer
+  (straight-use-package 'treemacs)
+  (straight-use-package 'treemacs-projectile)
+  (global-set-key (kbd "C-c t") 'treemacs)
+
+  ;; Workspace management
+  (straight-use-package 'perspective)
+  (persp-mode)
+
+  ;; Parentheses
   (straight-use-package 'paredit)
   (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
   (add-hook 'clojure-mode-hook #'paredit-mode)
 
+  (straight-use-package 'rainbow-delimiters)
+  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
+
+  ;; Window management
   (straight-use-package 'ace-window)
   (global-set-key (kbd "M-o") 'ace-window)
 
+  ;; Better completion UI
   (straight-use-package 'helm)
   (global-set-key (kbd "M-x") 'helm-M-x)
   (helm-mode 1)
@@ -196,20 +209,58 @@ when email comes in."
     (with-eval-after-load 'projectile
       (helm-projectile-on)))
 
-  (straight-use-package 'fzf)
-  ;; Commented out configuration
-                                        ;(global-set-key (kbd "C-x C-f") 'fzf-projectile)
+  ;; Help with keybindings
+  (straight-use-package 'which-key)
+  (which-key-mode)
 
+  ;; Modern modeline
+  (straight-use-package 'doom-modeline)
+  (doom-modeline-mode 1)
+
+  ;; All-the-icons for a modern look
+  (straight-use-package 'all-the-icons)
+  (straight-use-package 'all-the-icons-dired)
+  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+
+  ;; Visual indentation guides
+  (straight-use-package 'highlight-indent-guides)
+  (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
+  (setq highlight-indent-guides-method 'character)
+
+  ;; Fast navigation
+  (straight-use-package 'avy)
+  (global-set-key (kbd "C-:") 'avy-goto-char)
+  (global-set-key (kbd "M-g g") 'avy-goto-line)
+
+  ;; Git integration
   (straight-use-package 'magit)
   (global-set-key (kbd "C-c m s") 'magit-status)
   (setq magit-save-repository-buffers 'dontask)
 
-  (straight-use-package 'keychain-environment)
-  (keychain-refresh-environment)
+  ;; Git changes in gutter
+  (straight-use-package 'diff-hl)
+  (global-diff-hl-mode)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
 
+  ;; GitHub/GitLab integration
+  (straight-use-package 'forge)
+  (with-eval-after-load 'magit
+    (require 'forge))
+
+  ;; Format code with external formatters
+  (straight-use-package 'apheleia)
+  (apheleia-global-mode +1)
+
+  ;; Completion framework
   (straight-use-package 'company)
-  (add-hook 'emacs-lisp-mode-hook #'company-mode)
-  (add-hook 'clojure-mode-hook #'company-mode))
+  (add-hook 'prog-mode-hook 'company-mode)
+  (global-company-mode)
+  (setq company-idle-delay 0.1
+        company-minimum-prefix-length 1)
+
+  ;; Keychain for SSH keys
+  (straight-use-package 'keychain-environment)
+  (keychain-refresh-environment))
 
 (defun file-to-string (path)
   (with-temp-buffer
@@ -272,7 +323,18 @@ when email comes in."
 
 (defun rust ()
   (straight-use-package 'rust-mode)
-  (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode)))
+  (straight-use-package 'rustic)  ;; Enhanced Rust mode
+  (add-to-list 'auto-mode-alist '("\\.rs\\'" . rustic-mode))
+
+  ;; Format on save for Rust
+  (defun format-rust-buffer ()
+    (when (eq major-mode 'rustic-mode)
+      (lsp-format-buffer)))
+
+  (add-hook 'rustic-mode-hook 'lsp)
+  (add-hook 'rustic-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook 'format-rust-buffer nil t))))
 
 (defun go ()
   (straight-use-package 'go-mode)
@@ -412,23 +474,85 @@ when email comes in."
 
 
 
+(defun python ()
+  (straight-use-package 'python-mode)
+
+  ;; Format on save for Python
+  (defun format-python-buffer ()
+    (when (eq major-mode 'python-mode)
+      (lsp-format-buffer)))
+
+  (add-hook 'python-mode-hook 'lsp)
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook 'format-python-buffer nil t))))
+
 (defun flycheck ()
-  (straight-use-package 'flycheck))
+  (straight-use-package 'flycheck)
+  (global-flycheck-mode))
 
 
 (defun lsp ()
   (straight-use-package 'lsp-mode)
   (straight-use-package 'lsp-ui)
+  (straight-use-package 'lsp-treemacs)
+  (straight-use-package 'dap-mode)
 
   ;; Configure LSP mode
   (setq lsp-keymap-prefix "C-c l")
   (setq lsp-enable-which-key t)
   (setq lsp-headerline-breadcrumb-enable t)
   (setq lsp-signature-auto-activate t)
+  (setq lsp-enable-snippet t)
+  (setq lsp-enable-folding t)
+  (setq lsp-enable-symbol-highlighting t)
+  (setq lsp-enable-links t)
+  (setq lsp-enable-indentation t)
+  (setq lsp-modeline-diagnostics-enable t)
+  (setq lsp-modeline-code-actions-enable t)
+  (setq lsp-completion-provider :capf)
+  (setq lsp-idle-delay 0.1)
+
+  ;; Performance optimizations
+  (setq gc-cons-threshold 100000000)  ; 100MB
+  (setq read-process-output-max (* 1024 1024)) ; 1MB
 
   ;; Configure LSP UI
   (setq lsp-ui-doc-enable t)
-  (setq lsp-ui-sideline-enable t))
+  (setq lsp-ui-doc-position 'at-point)
+  (setq lsp-ui-doc-show-with-cursor t)
+  (setq lsp-ui-doc-delay 0.2)
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-sideline-show-diagnostics t)
+  (setq lsp-ui-sideline-show-code-actions t)
+  (setq lsp-ui-sideline-delay 0.2)
+
+  ;; Enable LSP with treemacs integration
+  (lsp-treemacs-sync-mode 1)
+
+  ;; Setup debugging
+  (dap-auto-configure-mode)
+
+  ;; Auto-enable LSP for programming modes
+  (add-hook 'c-mode-hook 'lsp)
+  (add-hook 'c++-mode-hook 'lsp)
+  (add-hook 'python-mode-hook 'lsp)
+  (add-hook 'rust-mode-hook 'lsp)
+  (add-hook 'js-mode-hook 'lsp)
+  (add-hook 'typescript-mode-hook 'lsp)
+  (add-hook 'web-mode-hook 'lsp)
+  (add-hook 'yaml-mode-hook 'lsp)
+  (add-hook 'json-mode-hook 'lsp)
+  (add-hook 'sh-mode-hook 'lsp)
+
+  ;; Key bindings
+  (global-set-key (kbd "C-c l d") 'lsp-find-definition)
+  (global-set-key (kbd "C-c l r") 'lsp-find-references)
+  (global-set-key (kbd "C-c l h") 'lsp-describe-thing-at-point)
+  (global-set-key (kbd "C-c l a") 'lsp-execute-code-action)
+  (global-set-key (kbd "C-c l f") 'lsp-format-buffer)
+  (global-set-key (kbd "C-c l n") 'lsp-rename)
+  (global-set-key (kbd "C-c l i") 'lsp-organize-imports))
 
 
 ;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
