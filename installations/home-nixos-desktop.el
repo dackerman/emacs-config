@@ -10,7 +10,7 @@
 
 (defvar custom-font "Hack-12")
 
-(load "~/.emacs.d/lisp/features")
+(require 'features)
 
 ;; Call feature functions directly
 (look-and-feel)
@@ -25,6 +25,5 @@
 (javascript)
 (typescript)
 (python)
-(rust)
 (markdown)
 (lsp)

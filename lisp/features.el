@@ -321,21 +321,6 @@ when email comes in."
   (add-hook 'markdown-mode-hook 'set-autofill-hook))
 
 
-(defun rust ()
-  (straight-use-package 'rust-mode)
-  (straight-use-package 'rustic)  ;; Enhanced Rust mode
-  (add-to-list 'auto-mode-alist '("\\.rs\\'" . rustic-mode))
-
-  ;; Format on save for Rust
-  (defun format-rust-buffer ()
-    (when (eq major-mode 'rustic-mode)
-      (lsp-format-buffer)))
-
-  (add-hook 'rustic-mode-hook 'lsp)
-  (add-hook 'rustic-mode-hook
-            (lambda ()
-              (add-hook 'before-save-hook 'format-rust-buffer nil t))))
-
 (defun go ()
   (straight-use-package 'go-mode)
 
@@ -537,7 +522,6 @@ when email comes in."
   (add-hook 'c-mode-hook 'lsp)
   (add-hook 'c++-mode-hook 'lsp)
   (add-hook 'python-mode-hook 'lsp)
-  (add-hook 'rust-mode-hook 'lsp)
   (add-hook 'js-mode-hook 'lsp)
   (add-hook 'typescript-mode-hook 'lsp)
   (add-hook 'web-mode-hook 'lsp)
