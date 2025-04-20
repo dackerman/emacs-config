@@ -180,7 +180,23 @@ when email comes in."
   ;; Tree-based sidebar file explorer
   (straight-use-package 'treemacs)
   (straight-use-package 'treemacs-projectile)
-  (global-set-key (kbd "C-c t") 'treemacs)
+  
+  ;; Configure treemacs to display only the current project
+  (setq treemacs-project-follow-mode t)
+  (setq treemacs-follow-mode t)
+  (with-eval-after-load 'treemacs
+    (treemacs-project-follow-mode t)
+    (treemacs-follow-mode t))
+  
+  (defun treemacs-display-current-project-only ()
+    "Display only the current project in treemacs."
+    (interactive)
+    (let ((current-project (projectile-project-root)))
+      (when current-project
+        (treemacs-display-current-project-exclusively))))
+  
+  ;; Use custom function to show only current project
+  (global-set-key (kbd "C-c t") 'treemacs-display-current-project-only)
 
   ;; Workspace management
   (straight-use-package 'perspective)
