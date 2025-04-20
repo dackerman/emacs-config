@@ -401,9 +401,14 @@ when email comes in."
   (defun format-emacs-lisp-buffer ()
     (when (eq major-mode 'emacs-lisp-mode)
       (indent-region (point-min) (point-max))))
-
+  
+  ;; Disable annoying warnings for Emacs Lisp
+  (setq byte-compile-warnings nil)
+  
+  ;; Just turn off flycheck completely for elisp
   (add-hook 'emacs-lisp-mode-hook
             (lambda ()
+              (flycheck-mode -1)
               (add-hook 'before-save-hook 'format-emacs-lisp-buffer nil t))))
 
 
