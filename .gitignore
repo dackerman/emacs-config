@@ -19,6 +19,7 @@ projects
 /ellama-sessions
 /request
 /packages
+forge-database.sqlite
 
 straight/*
 !straight/versions/
