@@ -180,21 +180,21 @@ when email comes in."
   ;; Tree-based sidebar file explorer
   (straight-use-package 'treemacs)
   (straight-use-package 'treemacs-projectile)
-  
+
   ;; Configure treemacs to display only the current project
   (setq treemacs-project-follow-mode t)
   (setq treemacs-follow-mode t)
   (with-eval-after-load 'treemacs
     (treemacs-project-follow-mode t)
     (treemacs-follow-mode t))
-  
+
   (defun treemacs-display-current-project-only ()
     "Display only the current project in treemacs."
     (interactive)
     (let ((current-project (projectile-project-root)))
       (when current-project
         (treemacs-display-current-project-exclusively))))
-  
+
   ;; Use custom function to show only current project
   (global-set-key (kbd "C-c t") 'treemacs-display-current-project-only)
 
@@ -326,6 +326,10 @@ when email comes in."
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun nixos ()
+  (straight-use-package 'nix-mode)
+  (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode)))
+
 (defun markdown ()
   (straight-use-package 'markdown-mode)
 
@@ -401,10 +405,10 @@ when email comes in."
   (defun format-emacs-lisp-buffer ()
     (when (eq major-mode 'emacs-lisp-mode)
       (indent-region (point-min) (point-max))))
-  
+
   ;; Disable annoying warnings for Emacs Lisp
   (setq byte-compile-warnings nil)
-  
+
   ;; Just turn off flycheck completely for elisp
   (add-hook 'emacs-lisp-mode-hook
             (lambda ()
