@@ -290,7 +290,7 @@ when email comes in."
 
   ;; API keys
   (setq claude-api-key (file-to-string "~/claude-api-key.txt"))
-  (setq openai-api-key (file-to-string "~/openai.txt"))
+  (setq openai-api-key (file-to-string "~/openai-api-key.txt"))
   (setq gemini-api-key (file-to-string "~/gemini-api-key.txt"))
 
   ;; Claude backend
@@ -312,10 +312,13 @@ when email comes in."
           :stream t
           :key gemini-api-key))
 
+  ;; Make sure dependencies for cursor-assist are loaded first
+  (straight-use-package 'lsp-mode)
+  (straight-use-package 'company)
+  
   ;; Load Cursor-assist for code editing
-
-                                        ;(straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
-                                        ;                                      :files ("*.el")))
+  ;; (straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
+  ;;                                       :files ("*.el")))
 
   ;; If not using a GitHub repo yet, load from local file
   (load-file "~/.emacs.d/lisp/cursor-assist.el")
