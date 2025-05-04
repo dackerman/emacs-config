@@ -1,0 +1,1 @@
+- ~/.emacs.d is symlinked to /home/david/code/emacs-config, so they are the same directory
