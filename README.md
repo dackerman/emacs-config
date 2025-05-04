@@ -13,7 +13,7 @@ supports multiple "installations" from different machines.
 * `treemacs`
 * `company-mode`
 * `gptel` (LLM integration)
-* `cursor-assist` (Cursor-like AI coding assistance)
+* `inkling` (Intelligent code suggestions with LLMs)
 
 ## Setup
 
@@ -55,13 +55,13 @@ This configuration includes automated tests. You can run the tests using:
 
 ```sh
 make test            # Run all tests
-make test-cursor-assist  # Test just the cursor-assist package
+make test-inkling    # Test just the inkling package
 make lint            # Check Emacs Lisp syntax
 ```
 
-### Cursor-Assist Mode
+### Inkling Mode
 
-The `cursor-assist` package provides Cursor-like LLM code assistance in Emacs:
+The `inkling` package provides intelligent LLM code suggestions in Emacs:
 
 - Real-time LLM suggestions as you edit code
 - Automatic error fixing using LSP diagnostics
@@ -71,7 +71,7 @@ The `cursor-assist` package provides Cursor-like LLM code assistance in Emacs:
 
 #### Usage:
 
-- Enable with `M-x cursor-assist-mode` or the global keybinding `C-c C-a`
+- Enable with `M-x inkling-mode` or the global keybinding `C-c C-a`
 - After a short idle delay, suggestions will appear near your cursor
 - Use `TAB` to navigate between suggestions
 - Press `ENTER` to accept a suggestion

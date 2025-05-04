@@ -1,11 +1,11 @@
-;;; cursor-assist.el --- Cursor-like LLM code assistance for Emacs -*- lexical-binding: t -*-
+;;; inkling.el --- Intelligent LLM code hints for Emacs -*- lexical-binding: t -*-
 
 ;; Author: David
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "27.1") (gptel "0.3.0") (lsp-mode "8.0.0") (company "0.9.13"))
 
 ;;; Commentary:
-;; This package provides Cursor-like code assistance using GPTel and LSP mode.
+;; This package provides subtle, intelligent code suggestions using GPTel and LSP mode.
 ;; It automatically suggests code improvements and fixes while you're editing.
 
 ;;; Code:
@@ -18,73 +18,73 @@
 
 ;;; Customization
 
-(defgroup cursor-assist nil
-  "Cursor-like LLM assistance in Emacs."
+(defgroup inkling nil
+  "Intelligent LLM-based code suggestions in Emacs."
   :group 'tools
-  :prefix "cursor-assist-")
+  :prefix "inkling-")
 
-(defcustom cursor-assist-idle-delay 0.8
+(defcustom inkling-idle-delay 0.8
   "Idle delay in seconds before requesting LLM suggestions."
   :type 'number
-  :group 'cursor-assist)
+  :group 'inkling)
 
-(defcustom cursor-assist-context-size 50
+(defcustom inkling-context-size 50
   "Number of lines of context to include before and after point."
   :type 'number
-  :group 'cursor-assist)
+  :group 'inkling)
 
-(defcustom cursor-assist-backend nil
+(defcustom inkling-backend nil
   "GPTel backend to use for suggestions."
   :type 'symbol
-  :group 'cursor-assist)
+  :group 'inkling)
 
-(defcustom cursor-assist-temperature 0.2
+(defcustom inkling-temperature 0.2
   "Temperature setting for LLM suggestions."
   :type 'number
-  :group 'cursor-assist)
+  :group 'inkling)
 
-(defcustom cursor-assist-suggestion-face '(:inherit font-lock-comment-face :slant italic)
+(defcustom inkling-suggestion-face '(:inherit font-lock-comment-face :slant italic)
   "Face for suggestion overlays."
   :type 'face
-  :group 'cursor-assist)
+  :group 'inkling)
 
-(defcustom cursor-assist-navigation-face '(:inherit font-lock-keyword-face :box t)
+(defcustom inkling-navigation-face '(:inherit font-lock-keyword-face :box t)
   "Face for suggestion navigation indicators."
   :type 'face
-  :group 'cursor-assist)
+  :group 'inkling)
 
 ;;; Internal variables
 
-(defvar cursor-assist--timer nil
+(defvar inkling--timer nil
   "Timer for triggering suggestion updates.")
 
-(defvar cursor-assist--overlays nil
+(defvar inkling--overlays nil
   "List of active suggestion overlays.")
 
-(defvar cursor-assist--last-buffer-text nil
+(defvar inkling--last-buffer-text nil
   "Last analyzed buffer text.")
 
-(defvar cursor-assist--suggestion-positions nil
+(defvar inkling--suggestion-positions nil
   "Alist of suggestion positions in the buffer.")
 
-(defvar cursor-assist--current-suggestion-index -1
+(defvar inkling--current-suggestion-index -1
   "Current suggestion index when navigating.")
 
-(defvar cursor-assist--active-request nil
+(defvar inkling--active-request nil
   "Currently active LLM request.")
 
 ;;; Core functionality
 
-(defun cursor-assist--get-buffer-segment ()
+(defun inkling--get-buffer-segment ()
   "Get relevant portion of buffer for analysis."
   (let* ((line-count (line-number-at-pos (point-max)))
-         (context-start (max 1 (- (line-number-at-pos) cursor-assist-context-size)))
-         (context-end (min line-count (+ (line-number-at-pos) cursor-assist-context-size)))
+         (context-start (max 1 (- (line-number-at-pos) inkling-context-size)))
+         (context-end (min line-count (+ (line-number-at-pos) inkling-context-size)))
          (start-pos (save-excursion (goto-char (point-min)) (forward-line (1- context-start)) (point)))
          (end-pos (save-excursion (goto-char (point-min)) (forward-line (1- context-end)) (end-of-line) (point))))
     (buffer-substring-no-properties start-pos end-pos)))
 
-(defun cursor-assist--get-lsp-diagnostics ()
+(defun inkling--get-lsp-diagnostics ()
   "Get LSP diagnostic information."
   (when (bound-and-true-p lsp-mode)
     (let* ((diagnostics (lsp--get-buffer-diagnostics))
@@ -103,7 +103,7 @@
                         message) result)))
       (nreverse result))))
 
-(defun cursor-assist--prepare-prompt (buffer-text diagnostics-info cursor-pos)
+(defun inkling--prepare-prompt (buffer-text diagnostics-info cursor-pos)
   "Create a prompt for LLM with BUFFER-TEXT, DIAGNOSTICS-INFO, and CURSOR-POS."
   (format "
 You are acting as an intelligent Emacs code assistant with these goals:
@@ -141,13 +141,13 @@ INSTRUCTIONS:
             "No diagnostics")
           buffer-text))
 
-(defun cursor-assist--process-response (response &optional _info)
+(defun inkling--process-response (response &optional _info)
   "Process suggestion RESPONSE from LLM.
 Optional _INFO contains metadata from gptel about the response."
-  (setq cursor-assist--active-request nil)
-  (setq cursor-assist--suggestion-positions nil)
+  (setq inkling--active-request nil)
+  (setq inkling--suggestion-positions nil)
   
-  (cursor-assist--clear-overlays)
+  (inkling--clear-overlays)
   
   (with-temp-buffer
     (insert response)
@@ -173,41 +173,41 @@ Optional _INFO contains metadata from gptel about the response."
         
         ;; Add to suggestion positions list
         (push (cons (cons line column) (string-trim suggestion-text)) 
-              cursor-assist--suggestion-positions)))
+              inkling--suggestion-positions)))
     
-    (setq cursor-assist--suggestion-positions 
-          (nreverse cursor-assist--suggestion-positions)))
+    (setq inkling--suggestion-positions 
+          (nreverse inkling--suggestion-positions)))
   
-  (cursor-assist--display-suggestions))
+  (inkling--display-suggestions))
 
-(defun cursor-assist--request-suggestions ()
+(defun inkling--request-suggestions ()
   "Request code suggestions from the LLM."
-  (when (and cursor-assist-mode
-             (not cursor-assist--active-request)
+  (when (and inkling-mode
+             (not inkling--active-request)
              (derived-mode-p 'prog-mode))
-    (let ((buffer-text (cursor-assist--get-buffer-segment))
-          (diagnostics (cursor-assist--get-lsp-diagnostics))
+    (let ((buffer-text (inkling--get-buffer-segment))
+          (diagnostics (inkling--get-lsp-diagnostics))
           (cursor-pos (cons (line-number-at-pos) (current-column))))
       
       ;; Only process if buffer content has changed
-      (unless (equal buffer-text cursor-assist--last-buffer-text)
-        (setq cursor-assist--last-buffer-text buffer-text)
+      (unless (equal buffer-text inkling--last-buffer-text)
+        (setq inkling--last-buffer-text buffer-text)
         
         ;; Request suggestions from gptel
         ;; Use global gptel settings - must ensure these are set before activation
-        (setq cursor-assist--active-request
+        (setq inkling--active-request
               (gptel-request
-               (cursor-assist--prepare-prompt buffer-text diagnostics cursor-pos)
-               :callback #'cursor-assist--process-response
+               (inkling--prepare-prompt buffer-text diagnostics cursor-pos)
+               :callback #'inkling--process-response
                :system "You are a code assistant that specializes in providing code suggestions."))))))
 
-(defun cursor-assist--clear-overlays ()
+(defun inkling--clear-overlays ()
   "Clear all suggestion overlays."
-  (dolist (ov cursor-assist--overlays)
+  (dolist (ov inkling--overlays)
     (delete-overlay ov))
-  (setq cursor-assist--overlays nil))
+  (setq inkling--overlays nil))
 
-(defun cursor-assist--get-position-in-buffer (line column)
+(defun inkling--get-position-in-buffer (line column)
   "Get buffer position for LINE and COLUMN."
   (save-excursion
     (goto-char (point-min))
@@ -215,93 +215,93 @@ Optional _INFO contains metadata from gptel about the response."
     (move-to-column column)
     (point)))
 
-(defun cursor-assist--display-suggestions ()
+(defun inkling--display-suggestions ()
   "Display suggestion overlays in the buffer."
-  (when cursor-assist--suggestion-positions
-    (dolist (suggestion cursor-assist--suggestion-positions)
+  (when inkling--suggestion-positions
+    (dolist (suggestion inkling--suggestion-positions)
       (let* ((pos (car suggestion))
              (text (cdr suggestion))
              (line (car pos))
              (column (cdr pos))
-             (buffer-pos (cursor-assist--get-position-in-buffer line column))
+             (buffer-pos (inkling--get-position-in-buffer line column))
              (ov (make-overlay buffer-pos buffer-pos)))
         
         ;; Create overlay for suggestion
-        (overlay-put ov 'cursor-assist-suggestion t)
+        (overlay-put ov 'inkling-suggestion t)
         (overlay-put ov 'after-string
                      (propertize (concat " " text)
-                                'face cursor-assist-suggestion-face
-                                'cursor-assist-suggestion text))
+                                'face inkling-suggestion-face
+                                'inkling-suggestion text))
         
         ;; Store overlay
-        (push ov cursor-assist--overlays)))
+        (push ov inkling--overlays)))
     
     ;; Add navigation indicators if we have multiple suggestions
-    (when (> (length cursor-assist--suggestion-positions) 1)
-      (dolist (suggestion cursor-assist--suggestion-positions)
+    (when (> (length inkling--suggestion-positions) 1)
+      (dolist (suggestion inkling--suggestion-positions)
         (let* ((pos (car suggestion))
                (line (car pos))
                (column (cdr pos))
-               (buffer-pos (cursor-assist--get-position-in-buffer line column))
+               (buffer-pos (inkling--get-position-in-buffer line column))
                (nav-ov (make-overlay buffer-pos buffer-pos)))
           
           ;; Create overlay for navigation indicator
-          (overlay-put nav-ov 'cursor-assist-navigation t)
+          (overlay-put nav-ov 'inkling-navigation t)
           (overlay-put nav-ov 'before-string
                        (propertize " [Tab to navigate] "
-                                  'face cursor-assist-navigation-face))
+                                  'face inkling-navigation-face))
           
           ;; Store overlay
-          (push nav-ov cursor-assist--overlays))))))
+          (push nav-ov inkling--overlays))))))
 
-(defun cursor-assist-next-suggestion ()
+(defun inkling-next-suggestion ()
   "Navigate to the next suggestion."
   (interactive)
-  (when cursor-assist--suggestion-positions
-    (setq cursor-assist--current-suggestion-index
-          (% (1+ cursor-assist--current-suggestion-index)
-             (length cursor-assist--suggestion-positions)))
+  (when inkling--suggestion-positions
+    (setq inkling--current-suggestion-index
+          (% (1+ inkling--current-suggestion-index)
+             (length inkling--suggestion-positions)))
     
-    (let* ((suggestion (nth cursor-assist--current-suggestion-index 
-                          cursor-assist--suggestion-positions))
+    (let* ((suggestion (nth inkling--current-suggestion-index 
+                          inkling--suggestion-positions))
            (pos (car suggestion))
            (line (car pos))
            (column (cdr pos))
-           (buffer-pos (cursor-assist--get-position-in-buffer line column)))
+           (buffer-pos (inkling--get-position-in-buffer line column)))
       
       ;; Move to suggestion position
       (goto-char buffer-pos))))
 
-(defun cursor-assist-previous-suggestion ()
+(defun inkling-previous-suggestion ()
   "Navigate to the previous suggestion."
   (interactive)
-  (when cursor-assist--suggestion-positions
-    (setq cursor-assist--current-suggestion-index
-          (% (+ (length cursor-assist--suggestion-positions)
-               (1- cursor-assist--current-suggestion-index))
-             (length cursor-assist--suggestion-positions)))
+  (when inkling--suggestion-positions
+    (setq inkling--current-suggestion-index
+          (% (+ (length inkling--suggestion-positions)
+               (1- inkling--current-suggestion-index))
+             (length inkling--suggestion-positions)))
     
-    (let* ((suggestion (nth cursor-assist--current-suggestion-index 
-                          cursor-assist--suggestion-positions))
+    (let* ((suggestion (nth inkling--current-suggestion-index 
+                          inkling--suggestion-positions))
            (pos (car suggestion))
            (line (car pos))
            (column (cdr pos))
-           (buffer-pos (cursor-assist--get-position-in-buffer line column)))
+           (buffer-pos (inkling--get-position-in-buffer line column)))
       
       ;; Move to suggestion position
       (goto-char buffer-pos))))
 
-(defun cursor-assist-accept-suggestion ()
+(defun inkling-accept-suggestion ()
   "Accept the current suggestion."
   (interactive)
-  (when cursor-assist--suggestion-positions
-    (let* ((suggestion (nth cursor-assist--current-suggestion-index 
-                         cursor-assist--suggestion-positions))
+  (when inkling--suggestion-positions
+    (let* ((suggestion (nth inkling--current-suggestion-index 
+                         inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
-           (buffer-pos (cursor-assist--get-position-in-buffer line column)))
+           (buffer-pos (inkling--get-position-in-buffer line column)))
       
       ;; Insert the suggestion
       (save-excursion
@@ -309,32 +309,32 @@ Optional _INFO contains metadata from gptel about the response."
         (insert text))
       
       ;; Clear overlays and update
-      (cursor-assist--clear-overlays)
-      (cursor-assist--request-suggestions))))
+      (inkling--clear-overlays)
+      (inkling--request-suggestions))))
 
-(defun cursor-assist-dismiss-suggestions ()
+(defun inkling-dismiss-suggestions ()
   "Dismiss all current suggestions."
   (interactive)
-  (cursor-assist--clear-overlays)
-  (setq cursor-assist--suggestion-positions nil)
-  (setq cursor-assist--current-suggestion-index -1))
+  (inkling--clear-overlays)
+  (setq inkling--suggestion-positions nil)
+  (setq inkling--current-suggestion-index -1))
 
 ;;; Company integration
 
-(defun cursor-assist--company-backend (command &optional arg &rest ignored)
-  "Company-mode backend for cursor-assist suggestions."
+(defun inkling--company-backend (command &optional arg &rest ignored)
+  "Company-mode backend for inkling suggestions."
   (interactive (list 'interactive))
   (cl-case command
-    (interactive (company-begin-backend 'cursor-assist--company-backend))
-    (prefix (when cursor-assist-mode
+    (interactive (company-begin-backend 'inkling--company-backend))
+    (prefix (when inkling-mode
               (company-grab-symbol)))
     (candidates
-     (when (and cursor-assist-mode cursor-assist--suggestion-positions)
+     (when (and inkling-mode inkling--suggestion-positions)
        (let ((current-line (line-number-at-pos))
              (current-col (current-column))
              (matching-suggestions nil))
          ;; Find suggestions near the current position
-         (dolist (suggestion cursor-assist--suggestion-positions)
+         (dolist (suggestion inkling--suggestion-positions)
            (let* ((pos (car suggestion))
                   (line (car pos))
                   (col (cdr pos))
@@ -344,52 +344,52 @@ Optional _INFO contains metadata from gptel about the response."
                         (<= (abs (- col current-col)) 10))
                (push text matching-suggestions))))
          matching-suggestions)))
-    (annotation (when cursor-assist-mode " [Cursor]"))
-    (meta (when cursor-assist-mode "LLM code suggestion"))
-    (post-completion (cursor-assist--clear-overlays))))
+    (annotation (when inkling-mode " [Inkling]"))
+    (meta (when inkling-mode "LLM code suggestion"))
+    (post-completion (inkling--clear-overlays))))
 
-;; Add cursor-assist as a company backend
-(defun cursor-assist--setup-company ()
-  "Add cursor-assist company backend."
-  (add-to-list 'company-backends 'cursor-assist--company-backend))
+;; Add inkling as a company backend
+(defun inkling--setup-company ()
+  "Add inkling company backend."
+  (add-to-list 'company-backends 'inkling--company-backend))
 
 ;;; Minor mode definition
 
-(defvar cursor-assist-mode-map
+(defvar inkling-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "TAB") 'cursor-assist-next-suggestion)
-    (define-key map (kbd "<backtab>") 'cursor-assist-previous-suggestion)
-    (define-key map (kbd "RET") 'cursor-assist-accept-suggestion)
-    (define-key map (kbd "C-g") 'cursor-assist-dismiss-suggestions)
+    (define-key map (kbd "TAB") 'inkling-next-suggestion)
+    (define-key map (kbd "<backtab>") 'inkling-previous-suggestion)
+    (define-key map (kbd "RET") 'inkling-accept-suggestion)
+    (define-key map (kbd "C-g") 'inkling-dismiss-suggestions)
     map)
-  "Keymap for cursor-assist mode.")
+  "Keymap for inkling mode.")
 
 ;;;###autoload
-(define-minor-mode cursor-assist-mode
-  "Toggle Cursor-like code assistance mode."
-  :lighter " Cursor"
-  :keymap cursor-assist-mode-map
+(define-minor-mode inkling-mode
+  "Toggle Inkling code assistance mode."
+  :lighter " Inkling"
+  :keymap inkling-mode-map
   :global nil
-  (if cursor-assist-mode
+  (if inkling-mode
       (progn
-        (setq cursor-assist--timer
-              (run-with-idle-timer cursor-assist-idle-delay t
-                                  #'cursor-assist--request-suggestions))
-        (add-hook 'lsp-diagnostics-updated-hook #'cursor-assist--request-suggestions nil t)
-        (cursor-assist--setup-company)
-        (cursor-assist--request-suggestions))
-    (when cursor-assist--timer
-      (cancel-timer cursor-assist--timer)
-      (setq cursor-assist--timer nil))
-    (remove-hook 'lsp-diagnostics-updated-hook #'cursor-assist--request-suggestions t)
-    (cursor-assist--clear-overlays)))
+        (setq inkling--timer
+              (run-with-idle-timer inkling-idle-delay t
+                                  #'inkling--request-suggestions))
+        (add-hook 'lsp-diagnostics-updated-hook #'inkling--request-suggestions nil t)
+        (inkling--setup-company)
+        (inkling--request-suggestions))
+    (when inkling--timer
+      (cancel-timer inkling--timer)
+      (setq inkling--timer nil))
+    (remove-hook 'lsp-diagnostics-updated-hook #'inkling--request-suggestions t)
+    (inkling--clear-overlays)))
 
 ;;;###autoload
-(define-globalized-minor-mode global-cursor-assist-mode
-  cursor-assist-mode
+(define-globalized-minor-mode global-inkling-mode
+  inkling-mode
   (lambda ()
     (when (derived-mode-p 'prog-mode)
-      (cursor-assist-mode 1))))
+      (inkling-mode 1))))
 
-(provide 'cursor-assist)
-;;; cursor-assist.el ends here
+(provide 'inkling)
+;;; inkling.el ends here

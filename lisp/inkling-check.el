@@ -1,7 +1,7 @@
-;;; cursor-assist-check.el --- Basic integrity check for cursor-assist
+;;; inkling-check.el --- Basic integrity check for inkling
 
 ;;; Commentary:
-;; This file provides a basic integrity check for cursor-assist.el
+;; This file provides a basic integrity check for inkling.el
 ;; It verifies that the structure and definitions are correct,
 ;; without requiring dependencies.
 
@@ -39,31 +39,31 @@
   (defun overlay-put (_overlay _prop _val) nil)
   (defun delete-overlay (_overlay) nil))
 
-;; Load cursor-assist
-(let ((path (expand-file-name "cursor-assist.el" 
+;; Load inkling
+(let ((path (expand-file-name "inkling.el" 
                               (file-name-directory load-file-name))))
   (load-file path))
 
 ;; Check for key functions and variables
 (defun check-definitions ()
-  "Check if required cursor-assist definitions exist."
-  (let ((required-vars '(cursor-assist-mode
-                         cursor-assist--timer
-                         cursor-assist--overlays
-                         cursor-assist--suggestion-positions
-                         cursor-assist--current-suggestion-index))
-        (required-funcs '(cursor-assist--get-buffer-segment
-                         cursor-assist--get-lsp-diagnostics
-                         cursor-assist--prepare-prompt
-                         cursor-assist--process-response
-                         cursor-assist--request-suggestions
-                         cursor-assist--clear-overlays
-                         cursor-assist--get-position-in-buffer
-                         cursor-assist--display-suggestions
-                         cursor-assist-next-suggestion
-                         cursor-assist-previous-suggestion
-                         cursor-assist-accept-suggestion
-                         cursor-assist-dismiss-suggestions))
+  "Check if required inkling definitions exist."
+  (let ((required-vars '(inkling-mode
+                         inkling--timer
+                         inkling--overlays
+                         inkling--suggestion-positions
+                         inkling--current-suggestion-index))
+        (required-funcs '(inkling--get-buffer-segment
+                         inkling--get-lsp-diagnostics
+                         inkling--prepare-prompt
+                         inkling--process-response
+                         inkling--request-suggestions
+                         inkling--clear-overlays
+                         inkling--get-position-in-buffer
+                         inkling--display-suggestions
+                         inkling-next-suggestion
+                         inkling-previous-suggestion
+                         inkling-accept-suggestion
+                         inkling-dismiss-suggestions))
         (missing-vars '())
         (missing-funcs '()))
     
@@ -89,5 +89,5 @@
 ;; Run check
 (check-definitions)
 
-(provide 'cursor-assist-check)
-;;; cursor-assist-check.el ends here
+(provide 'inkling-check)
+;;; inkling-check.el ends here

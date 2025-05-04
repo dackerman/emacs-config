@@ -8,7 +8,7 @@
 ## Project Structure
 - Main configuration loaded from `installations/home-nixos-desktop.el`
 - Features defined in `lisp/features.el` as modular components
-- Cursor-assist package in `lisp/cursor-assist.el` for AI code assistance
+- Inkling package in `lisp/inkling.el` for AI code assistance
 
 ## Package Management
 - Uses straight.el for package management
@@ -16,21 +16,21 @@
 
 ## Testing
 - Run `make test` to run all tests
-- Run `make test-cursor-assist` to test just the cursor-assist package
+- Run `make test-inkling` to test just the inkling package
 - Run `make lint` to check Emacs Lisp syntax
 
 ## Key Components
-- `cursor-assist.el`: Provides Cursor-like LLM code assistance
+- `inkling.el`: Provides intelligent LLM code assistance
 - `features.el`: Contains modular features that can be enabled selectively
 - `installations/home-nixos-desktop.el`: Main configuration for David's NixOS desktop
 
 ## LLM Integration
 - Uses gptel for LLM integration
 - Configured to work with Claude, OpenAI and Gemini
-- cursor-assist uses Claude for code suggestions
+- inkling uses Claude for code suggestions
 
 ## Important Commands
-- `M-x cursor-assist-mode` or `C-c C-a`: Toggle cursor-assist mode
+- `M-x inkling-mode` or `C-c C-a`: Toggle inkling mode
 - `C-c g`: Launch gptel
 - `C-c s`: Send gptel message
 - `C-c p`: Projectile command prefix

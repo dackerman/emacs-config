@@ -312,28 +312,28 @@ when email comes in."
           :stream t
           :key gemini-api-key))
 
-  ;; Make sure dependencies for cursor-assist are loaded first
+  ;; Make sure dependencies for inkling are loaded first
   (straight-use-package 'lsp-mode)
   (straight-use-package 'company)
   
-  ;; Load Cursor-assist for code editing
-  ;; (straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
-  ;;                                       :files ("*.el")))
+  ;; Load inkling for code editing
+  ;; (straight-use-package '(inkling :type git :host github :repo "your-username/inkling"
+  ;;                                 :files ("*.el")))
 
   ;; If not using a GitHub repo yet, load from local file
-  (load-file "~/.emacs.d/lisp/cursor-assist.el")
+  (load-file "~/.emacs.d/lisp/inkling.el")
 
-  ;; Configure cursor-assist and set up gptel defaults
-  (setq gptel-backend claude  ; Set global gptel backend for cursor-assist
+  ;; Configure inkling and set up gptel defaults
+  (setq gptel-backend claude  ; Set global gptel backend for inkling
         gptel-temperature 0.2  ; Set global temperature for gptel
-        cursor-assist-idle-delay 0.8
-        cursor-assist-context-size 50)
+        inkling-idle-delay 0.8
+        inkling-context-size 50)
 
-  ;; Enable cursor-assist for programming modes
-  (add-hook 'prog-mode-hook 'cursor-assist-mode)
+  ;; Enable inkling for programming modes
+  (add-hook 'prog-mode-hook 'inkling-mode)
 
-  ;; Global key to toggle cursor-assist mode
-  (global-set-key (kbd "C-c C-a") 'cursor-assist-mode)
+  ;; Global key to toggle inkling mode
+  (global-set-key (kbd "C-c C-a") 'inkling-mode)
 
   ;; Keybindings for quick gptel access
   (global-set-key (kbd "C-c g") 'gptel)
