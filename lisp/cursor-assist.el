@@ -193,13 +193,14 @@ INSTRUCTIONS:
         (setq cursor-assist--last-buffer-text buffer-text)
         
         ;; Request suggestions from gptel
-        (setq cursor-assist--active-request
-              (gptel-request
-               (cursor-assist--prepare-prompt buffer-text diagnostics cursor-pos)
-               :callback #'cursor-assist--process-response
-               :backend cursor-assist-backend
-               :system "You are a code assistant that specializes in providing code suggestions."
-               :temperature cursor-assist-temperature))))))
+        ;; Use the selected backend directly instead of passing as parameter
+        (let ((gptel-backend cursor-assist-backend))
+          (setq cursor-assist--active-request
+                (gptel-request
+                 (cursor-assist--prepare-prompt buffer-text diagnostics cursor-pos)
+                 :callback #'cursor-assist--process-response
+                 :system "You are a code assistant that specializes in providing code suggestions."
+                 :temperature cursor-assist-temperature)))))))
 
 (defun cursor-assist--clear-overlays ()
   "Clear all suggestion overlays."
