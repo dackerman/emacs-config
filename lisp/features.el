@@ -323,9 +323,9 @@ when email comes in."
   ;; If not using a GitHub repo yet, load from local file
   (load-file "~/.emacs.d/lisp/cursor-assist.el")
 
-  ;; Configure cursor-assist
-  (setq cursor-assist-backend 'claude
-        cursor-assist-temperature 0.2
+  ;; Configure cursor-assist and set up gptel defaults
+  (setq gptel-backend claude  ; Set global gptel backend for cursor-assist
+        gptel-temperature 0.2  ; Set global temperature for gptel
         cursor-assist-idle-delay 0.8
         cursor-assist-context-size 50)
 

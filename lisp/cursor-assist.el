@@ -33,7 +33,7 @@
   :type 'number
   :group 'cursor-assist)
 
-(defcustom cursor-assist-backend 'claude
+(defcustom cursor-assist-backend nil
   "GPTel backend to use for suggestions."
   :type 'symbol
   :group 'cursor-assist)
@@ -193,14 +193,12 @@ INSTRUCTIONS:
         (setq cursor-assist--last-buffer-text buffer-text)
         
         ;; Request suggestions from gptel
-        ;; Use the selected backend directly instead of passing as parameter
-        (let ((gptel-backend cursor-assist-backend)
-              (gptel-temperature cursor-assist-temperature))
-          (setq cursor-assist--active-request
-                (gptel-request
-                 (cursor-assist--prepare-prompt buffer-text diagnostics cursor-pos)
-                 :callback #'cursor-assist--process-response
-                 :system "You are a code assistant that specializes in providing code suggestions.")))))))
+        ;; Use global gptel settings - must ensure these are set before activation
+        (setq cursor-assist--active-request
+              (gptel-request
+               (cursor-assist--prepare-prompt buffer-text diagnostics cursor-pos)
+               :callback #'cursor-assist--process-response
+               :system "You are a code assistant that specializes in providing code suggestions."))))))
 
 (defun cursor-assist--clear-overlays ()
   "Clear all suggestion overlays."
