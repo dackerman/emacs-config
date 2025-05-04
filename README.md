@@ -76,3 +76,13 @@ The `inkling` package provides intelligent LLM code suggestions in Emacs:
 - Use `TAB` to navigate between suggestions
 - Press `ENTER` to accept a suggestion
 - Press `C-g` to dismiss all suggestions
+
+#### Logging and Costs:
+
+Inkling includes detailed logging and cost tracking for LLM usage:
+
+- `M-x inkling-display-statistics` - View token usage and cost statistics
+- `M-x inkling-open-log` - View detailed log of all LLM interactions
+- `M-x inkling-clear-log` - Clear the log file
+- `M-x inkling-reset-statistics` - Reset usage statistics
+- `M-x inkling-use-backend` - Switch between different LLM backends

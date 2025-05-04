@@ -78,6 +78,36 @@ Options are:
                  (const :tag "Inline" inline))
   :group 'inkling)
 
+;;; Logging and Stats
+
+(defgroup inkling-logging nil
+  "Logging and statistics settings for inkling."
+  :group 'inkling)
+
+(defcustom inkling-enable-logging t
+  "Whether to enable logging of LLM requests and responses."
+  :type 'boolean
+  :group 'inkling-logging)
+
+(defcustom inkling-log-file "~/.emacs.d/inkling-log.org"
+  "File where inkling logs will be stored."
+  :type 'string
+  :group 'inkling-logging)
+
+(defcustom inkling-log-with-context nil
+  "Whether to include buffer context in logs.
+Warning: This will store code snippets in the log file."
+  :type 'boolean
+  :group 'inkling-logging)
+
+(defcustom inkling-token-cost-map
+  '((claude-3-7-sonnet-20250219 . ((input . 0.0005) (output . 0.0015)))
+    (04-mini . ((input . 0.00010) (output . 0.0003)))
+    (gemini-1.5-pro . ((input . 0.0001) (output . 0.0002))))
+  "Cost per token in USD for different models (input and output costs)."
+  :type '(alist :key-type symbol :value-type (alist :key-type symbol :value-type number))
+  :group 'inkling-logging)
+
 ;;; Internal variables
 
 (defvar inkling--timer nil
@@ -97,6 +127,21 @@ Options are:
 
 (defvar inkling--active-request nil
   "Currently active LLM request.")
+
+(defvar inkling--stats-total-tokens 0
+  "Total number of tokens used in the current session.")
+
+(defvar inkling--stats-total-cost 0.0
+  "Estimated total cost in USD for the current session.")
+
+(defvar inkling--stats-total-requests 0
+  "Total number of LLM requests made in the current session.")
+
+(defvar inkling--stats-total-responses 0
+  "Total number of LLM responses received in the current session.")
+
+(defvar inkling--stats-backend-usage (make-hash-table :test 'eq)
+  "Hash table tracking usage per backend.")
 
 ;;; Core functionality
 
@@ -166,14 +211,120 @@ INSTRUCTIONS:
             "No diagnostics")
           buffer-text))
 
-(defun inkling--process-response (response &optional _info)
+(defun inkling--log-to-file (type data)
+  "Log TYPE and DATA to the inkling log file.
+TYPE can be 'request, 'response, or 'error."
+  (when inkling-enable-logging
+    (let ((timestamp (format-time-string "%Y-%m-%d %H:%M:%S")))
+      (with-temp-buffer
+        (when (file-exists-p inkling-log-file)
+          (insert-file-contents inkling-log-file))
+        (goto-char (point-max))
+        (unless (> (buffer-size) 0)
+          (insert "#+TITLE: Inkling LLM Interaction Log\n")
+          (insert "#+OPTIONS: ^:nil\n\n"))
+        
+        (insert (format "* %s - %s\n" timestamp type))
+        
+        (cond
+         ((eq type 'request)
+          (let ((buffer-name (plist-get data :buffer-name))
+                (major-mode (plist-get data :major-mode))
+                (prompt (plist-get data :prompt))
+                (backend (plist-get data :backend))
+                (context (plist-get data :context)))
+            (insert (format "** Buffer: %s (%s)\n" buffer-name major-mode))
+            (insert (format "** Backend: %s\n" backend))
+            (when (and inkling-log-with-context context)
+              (insert "** Context:\n#+BEGIN_SRC\n")
+              (insert context)
+              (insert "\n#+END_SRC\n"))
+            (insert "** Prompt:\n#+BEGIN_SRC\n")
+            (insert prompt)
+            (insert "\n#+END_SRC\n")))
+         
+         ((eq type 'response)
+          (let ((response-text (plist-get data :response))
+                (tokens (plist-get data :tokens))
+                (cost (plist-get data :cost))
+                (model (plist-get data :model)))
+            (insert (format "** Model: %s\n" model))
+            (insert (format "** Tokens: %d\n" (or tokens 0)))
+            (insert (format "** Estimated Cost: $%.6f\n" (or cost 0.0)))
+            (insert "** Response:\n#+BEGIN_SRC\n")
+            (insert response-text)
+            (insert "\n#+END_SRC\n")))
+         
+         ((eq type 'error)
+          (insert (format "** Error: %s\n" data))))
+        
+        ;; Write back to file
+        (write-region (point-min) (point-max) inkling-log-file nil 'silent)))))
+
+(defun inkling--estimate-tokens (text)
+  "Roughly estimate the number of tokens in TEXT.
+This is a simple approximation based on whitespace-separated words."
+  (let ((word-count (length (split-string text nil t))))
+    ;; Adjust to approximate GPT tokenization (typically 4 chars per token)
+    (ceiling (* word-count 1.3))))
+
+(defun inkling--estimate-cost (input-tokens output-tokens model)
+  "Estimate cost based on INPUT-TOKENS and OUTPUT-TOKENS for MODEL."
+  (let* ((model-costs (cdr (assoc model inkling-token-cost-map)))
+         (input-cost (cdr (assoc 'input model-costs)))
+         (output-cost (cdr (assoc 'output model-costs))))
+    (+ (* input-tokens (or input-cost 0.0001))
+       (* output-tokens (or output-cost 0.0003)))))
+
+(defun inkling--update-stats (input-tokens output-tokens model)
+  "Update inkling statistics with INPUT-TOKENS, OUTPUT-TOKENS for MODEL."
+  (let* ((total-tokens (+ input-tokens output-tokens))
+         (cost (inkling--estimate-cost input-tokens output-tokens model))
+         (backend-stats (gethash model inkling--stats-backend-usage)))
+    
+    ;; Update global stats
+    (cl-incf inkling--stats-total-tokens total-tokens)
+    (cl-incf inkling--stats-total-cost cost)
+    (cl-incf inkling--stats-total-responses)
+    
+    ;; Update backend-specific stats
+    (if backend-stats
+        (progn
+          (cl-incf (plist-get backend-stats :tokens) total-tokens)
+          (cl-incf (plist-get backend-stats :cost) cost)
+          (cl-incf (plist-get backend-stats :uses)))
+      (puthash model
+               (list :tokens total-tokens
+                     :cost cost
+                     :uses 1)
+               inkling--stats-backend-usage))))
+
+(defun inkling--process-response (response &optional info)
   "Process suggestion RESPONSE from LLM.
-Optional _INFO contains metadata from gptel about the response."
+INFO contains metadata from gptel about the response."
   (setq inkling--active-request nil)
   (setq inkling--suggestion-positions nil)
   
   (inkling--clear-overlays)
   
+  ;; Log the response and gather statistics
+  (when info
+    (let* ((model (plist-get (plist-get info :data) :model))
+           (input-text (plist-get (plist-get info :data) :messages))
+           (input-tokens (inkling--estimate-tokens (format "%s" input-text)))
+           (output-tokens (inkling--estimate-tokens response)))
+      
+      ;; Update stats
+      (inkling--update-stats input-tokens output-tokens model)
+      
+      ;; Log response
+      (inkling--log-to-file 'response
+                          (list :response response
+                                :tokens (+ input-tokens output-tokens)
+                                :cost (inkling--estimate-cost input-tokens output-tokens model)
+                                :model model))))
+  
+  ;; Process the response content
   (with-temp-buffer
     (insert response)
     (goto-char (point-min))
@@ -218,13 +369,26 @@ Optional _INFO contains metadata from gptel about the response."
       (unless (equal buffer-text inkling--last-buffer-text)
         (setq inkling--last-buffer-text buffer-text)
         
-        ;; Request suggestions from gptel
-        ;; Use global gptel settings - must ensure these are set before activation
-        (setq inkling--active-request
-              (gptel-request
-               (inkling--prepare-prompt buffer-text diagnostics cursor-pos)
-               :callback #'inkling--process-response
-               :system "You are a code assistant that specializes in providing code suggestions."))))))
+        ;; Prepare prompt
+        (let ((prompt (inkling--prepare-prompt buffer-text diagnostics cursor-pos)))
+          
+          ;; Log the request
+          (when inkling-enable-logging
+            (cl-incf inkling--stats-total-requests)
+            (inkling--log-to-file 'request
+                                (list :buffer-name (buffer-name)
+                                      :major-mode major-mode
+                                      :prompt prompt
+                                      :backend gptel-backend
+                                      :context (when inkling-log-with-context buffer-text))))
+          
+          ;; Request suggestions from gptel
+          ;; Use global gptel settings - must ensure these are set before activation
+          (setq inkling--active-request
+                (gptel-request
+                 prompt
+                 :callback #'inkling--process-response
+                 :system "You are a code assistant that specializes in providing code suggestions."))))))))
 
 (defun inkling--clear-overlays ()
   "Clear all suggestion overlays."
@@ -518,6 +682,96 @@ Optional _INFO contains metadata from gptel about the response."
   (lambda ()
     (when (derived-mode-p 'prog-mode)
       (inkling-mode 1))))
+
+;;; Command Interface for Logging and Stats
+
+(defun inkling-display-statistics ()
+  "Display inkling usage statistics in a buffer."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*Inkling Stats*")
+    (erase-buffer)
+    (org-mode)
+    (insert "#+TITLE: Inkling Usage Statistics\n\n")
+    
+    ;; Insert session totals
+    (insert "* Session Totals\n")
+    (insert (format "- Total Requests: %d\n" inkling--stats-total-requests))
+    (insert (format "- Total Responses: %d\n" inkling--stats-total-responses))
+    (insert (format "- Total Tokens Used: %d\n" inkling--stats-total-tokens))
+    (insert (format "- Estimated Total Cost: $%.4f\n\n" inkling--stats-total-cost))
+    
+    ;; Insert per-model stats
+    (insert "* Per-Model Statistics\n")
+    (maphash
+     (lambda (model stats)
+       (insert (format "** %s\n" model))
+       (insert (format "- Uses: %d\n" (plist-get stats :uses)))
+       (insert (format "- Tokens: %d\n" (plist-get stats :tokens)))
+       (insert (format "- Estimated Cost: $%.4f\n\n" (plist-get stats :cost))))
+     inkling--stats-backend-usage)
+    
+    ;; Cost comparison information
+    (insert "* Model Cost Comparison (per 1000 tokens)\n")
+    (insert "| Model | Input Cost | Output Cost |\n")
+    (insert "|-------+------------+-------------|\n")
+    (dolist (model-cost inkling-token-cost-map)
+      (let* ((model (car model-cost))
+             (costs (cdr model-cost))
+             (input-cost (cdr (assoc 'input costs)))
+             (output-cost (cdr (assoc 'output costs))))
+        (insert (format "| %s | $%.4f | $%.4f |\n" 
+                        model 
+                        (* (or input-cost 0.0001) 1000)
+                        (* (or output-cost 0.0003) 1000)))))
+    
+    ;; Tips for cost optimization
+    (insert "\n* Cost Optimization Tips\n")
+    (insert "- Consider using smaller models for simpler tasks\n")
+    (insert "- Adjust context size to reduce token usage\n")
+    (insert "- Increase idle delay to reduce frequency of requests\n")
+    
+    ;; Display the buffer
+    (goto-char (point-min))
+    (switch-to-buffer (current-buffer))))
+
+(defun inkling-open-log ()
+  "Open the inkling log file."
+  (interactive)
+  (find-file inkling-log-file))
+
+(defun inkling-clear-log ()
+  "Clear the inkling log file."
+  (interactive)
+  (when (yes-or-no-p "Really clear the inkling log file? ")
+    (with-temp-file inkling-log-file
+      (insert "#+TITLE: Inkling LLM Interaction Log\n")
+      (insert "#+OPTIONS: ^:nil\n\n"))
+    (message "Inkling log cleared")))
+
+(defun inkling-reset-statistics ()
+  "Reset all inkling usage statistics."
+  (interactive)
+  (when (yes-or-no-p "Really reset all inkling statistics? ")
+    (setq inkling--stats-total-tokens 0
+          inkling--stats-total-cost 0.0
+          inkling--stats-total-requests 0
+          inkling--stats-total-responses 0
+          inkling--stats-backend-usage (make-hash-table :test 'eq))
+    (message "Inkling statistics reset")))
+
+;;; Backend switching utilities
+
+(defun inkling-use-backend (backend)
+  "Switch to a different BACKEND for inkling.
+BACKEND should be a gptel backend object."
+  (interactive
+   (list (completing-read "Select backend: "
+                          '("claude" "openai" "gemini")
+                          nil t)))
+  (let ((backend-sym (intern backend)))
+    (when (boundp backend-sym)
+      (setq gptel-backend (symbol-value backend-sym))
+      (message "Inkling now using %s backend" backend))))
 
 (provide 'inkling)
 ;;; inkling.el ends here
