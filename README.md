@@ -12,6 +12,8 @@ supports multiple "installations" from different machines.
 * `magit`
 * `treemacs`
 * `company-mode`
+* `gptel` (LLM integration)
+* `cursor-assist` (Cursor-like AI coding assistance)
 
 ## Setup
 
@@ -46,3 +48,31 @@ execute the body of the feature at the top level if so. That way, the
 features that are included actually execute at macroexpansion time.
 
 ![screenshots](images/emacs-screenshot.png)
+
+## Testing
+
+This configuration includes automated tests. You can run the tests using:
+
+```sh
+make test            # Run all tests
+make test-cursor-assist  # Test just the cursor-assist package
+make lint            # Check Emacs Lisp syntax
+```
+
+### Cursor-Assist Mode
+
+The `cursor-assist` package provides Cursor-like LLM code assistance in Emacs:
+
+- Real-time LLM suggestions as you edit code
+- Automatic error fixing using LSP diagnostics
+- Ghost-text overlays showing inline suggestions
+- Tab-based navigation between suggestions
+- Company-mode integration
+
+#### Usage:
+
+- Enable with `M-x cursor-assist-mode` or the global keybinding `C-c C-a`
+- After a short idle delay, suggestions will appear near your cursor
+- Use `TAB` to navigate between suggestions
+- Press `ENTER` to accept a suggestion
+- Press `C-g` to dismiss all suggestions

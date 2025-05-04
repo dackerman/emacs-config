@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        emacs_version:
+          - 27.2
+          - 28.2
+          - 29.1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - name: Install dependencies
+      run: |
+        mkdir -p ~/.emacs.d/lisp
+        touch ~/.emacs.d/custom.el
+        # Mock API keys for testing
+        echo "test-key" > ~/claude-api-key.txt
+        echo "test-key" > ~/openai.txt
+        echo "test-key" > ~/gemini-api-key.txt
+
+    - name: Run tests
+      run: |
+        emacs -batch -l ert -l lisp/cursor-assist.el -l lisp/cursor-assist-tests.el -f ert-run-tests-batch-and-exit
