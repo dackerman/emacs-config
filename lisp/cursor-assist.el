@@ -141,8 +141,9 @@ INSTRUCTIONS:
             "No diagnostics")
           buffer-text))
 
-(defun cursor-assist--process-response (response)
-  "Process suggestion RESPONSE from LLM."
+(defun cursor-assist--process-response (response &optional _info)
+  "Process suggestion RESPONSE from LLM.
+Optional _INFO contains metadata from gptel about the response."
   (setq cursor-assist--active-request nil)
   (setq cursor-assist--suggestion-positions nil)
   
