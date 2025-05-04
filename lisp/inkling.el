@@ -15,6 +15,7 @@
 (require 'company)
 (require 'cl-lib)
 (require 'overlay)
+(require 'tooltip) ;; Built-in tooltip support
 
 ;;; Customization
 
@@ -44,13 +45,37 @@
   :group 'inkling)
 
 (defcustom inkling-suggestion-face '(:inherit font-lock-comment-face :slant italic)
-  "Face for suggestion overlays."
+  "Face for suggestion text."
   :type 'face
   :group 'inkling)
 
 (defcustom inkling-navigation-face '(:inherit font-lock-keyword-face :box t)
   "Face for suggestion navigation indicators."
   :type 'face
+  :group 'inkling)
+
+(defcustom inkling-popup-background "#333333"
+  "Background color for suggestion popups."
+  :type 'string
+  :group 'inkling)
+
+(defcustom inkling-popup-foreground "#BBBBBB"
+  "Foreground color for suggestion popups."
+  :type 'string  
+  :group 'inkling)
+
+(defcustom inkling-popup-max-width 80
+  "Maximum width in characters for suggestion popups."
+  :type 'number
+  :group 'inkling)
+
+(defcustom inkling-display-style 'popup
+  "How to display suggestions.
+Options are:
+- 'popup: Show suggestions in a popup window
+- 'inline: Show suggestions as inline text (old behavior)"
+  :type '(choice (const :tag "Popup" popup)
+                 (const :tag "Inline" inline))
   :group 'inkling)
 
 ;;; Internal variables
@@ -215,49 +240,129 @@ Optional _INFO contains metadata from gptel about the response."
     (move-to-column column)
     (point)))
 
-(defun inkling--display-suggestions ()
-  "Display suggestion overlays in the buffer."
+(defun inkling--format-popup-text (text)
+  "Format TEXT for display in a popup."
+  (with-temp-buffer
+    (insert text)
+    (goto-char (point-min))
+    ;; Limit width of each line for better popup display
+    (while (not (eobp))
+      (let ((line-end (line-end-position)))
+        (when (> (- line-end (line-beginning-position)) inkling-popup-max-width)
+          (goto-char (+ (line-beginning-position) inkling-popup-max-width))
+          (insert "\n")
+          (setq line-end (line-end-position))))
+      (forward-line 1))
+    (buffer-string)))
+
+(defun inkling--show-popup (pos text)
+  "Show a popup at POS with TEXT as content."
+  (let ((formatted-text (inkling--format-popup-text text)))
+    (save-excursion
+      (goto-char pos)
+      ;; Create a tooltip with our text
+      (tooltip-show formatted-text
+                   (list :fg-color inkling-popup-foreground
+                         :bg-color inkling-popup-background)))))
+
+(defun inkling--display-suggestions-inline ()
+  "Display suggestion overlays directly in the buffer (traditional method)."
+  (dolist (suggestion inkling--suggestion-positions)
+    (let* ((pos (car suggestion))
+           (text (cdr suggestion))
+           (line (car pos))
+           (column (cdr pos))
+           (buffer-pos (inkling--get-position-in-buffer line column))
+           (ov (make-overlay buffer-pos buffer-pos)))
+      
+      ;; Create overlay for suggestion
+      (overlay-put ov 'inkling-suggestion t)
+      (overlay-put ov 'after-string
+                   (propertize (concat " " text)
+                              'face inkling-suggestion-face
+                              'inkling-suggestion text))
+      
+      ;; Store overlay
+      (push ov inkling--overlays)))
+  
+  ;; Add navigation indicators if we have multiple suggestions
+  (when (> (length inkling--suggestion-positions) 1)
+    (dolist (suggestion inkling--suggestion-positions)
+      (let* ((pos (car suggestion))
+             (line (car pos))
+             (column (cdr pos))
+             (buffer-pos (inkling--get-position-in-buffer line column))
+             (nav-ov (make-overlay buffer-pos buffer-pos)))
+        
+        ;; Create overlay for navigation indicator
+        (overlay-put nav-ov 'inkling-navigation t)
+        (overlay-put nav-ov 'before-string
+                     (propertize " [Tab to navigate] "
+                                'face inkling-navigation-face))
+        
+        ;; Store overlay
+        (push nav-ov inkling--overlays)))))
+
+(defun inkling--display-suggestions-popup ()
+  "Display suggestions in popup windows."
   (when inkling--suggestion-positions
+    ;; Create overlays for navigation indicators
     (dolist (suggestion inkling--suggestion-positions)
       (let* ((pos (car suggestion))
              (text (cdr suggestion))
              (line (car pos))
              (column (cdr pos))
              (buffer-pos (inkling--get-position-in-buffer line column))
-             (ov (make-overlay buffer-pos buffer-pos)))
+             (indicator-ov (make-overlay buffer-pos buffer-pos)))
         
-        ;; Create overlay for suggestion
-        (overlay-put ov 'inkling-suggestion t)
-        (overlay-put ov 'after-string
-                     (propertize (concat " " text)
-                                'face inkling-suggestion-face
-                                'inkling-suggestion text))
+        ;; Add a clickable indicator that will show the popup
+        (overlay-put indicator-ov 'inkling-suggestion t)
+        (overlay-put indicator-ov 'after-string
+                     (propertize " 💡" 
+                                'face inkling-navigation-face
+                                'mouse-face 'highlight
+                                'help-echo "Click to view suggestion"
+                                'inkling-suggestion text
+                                'keymap (let ((map (make-sparse-keymap)))
+                                          (define-key map [mouse-1]
+                                            (lambda (event)
+                                              (interactive "e")
+                                              (inkling--show-popup 
+                                               buffer-pos 
+                                               text)))
+                                          map)))
         
         ;; Store overlay
-        (push ov inkling--overlays)))
+        (push indicator-ov inkling--overlays)))
     
-    ;; Add navigation indicators if we have multiple suggestions
-    (when (> (length inkling--suggestion-positions) 1)
-      (dolist (suggestion inkling--suggestion-positions)
-        (let* ((pos (car suggestion))
-               (line (car pos))
-               (column (cdr pos))
-               (buffer-pos (inkling--get-position-in-buffer line column))
-               (nav-ov (make-overlay buffer-pos buffer-pos)))
-          
-          ;; Create overlay for navigation indicator
-          (overlay-put nav-ov 'inkling-navigation t)
-          (overlay-put nav-ov 'before-string
-                       (propertize " [Tab to navigate] "
-                                  'face inkling-navigation-face))
-          
-          ;; Store overlay
-          (push nav-ov inkling--overlays))))))
+    ;; For the first suggestion (current index), show the popup immediately
+    (when (and inkling--suggestion-positions 
+               (>= inkling--current-suggestion-index 0)
+               (< inkling--current-suggestion-index (length inkling--suggestion-positions)))
+      (let* ((suggestion (nth inkling--current-suggestion-index inkling--suggestion-positions))
+             (pos (car suggestion))
+             (text (cdr suggestion))
+             (line (car pos))
+             (column (cdr pos))
+             (buffer-pos (inkling--get-position-in-buffer line column)))
+        (inkling--show-popup buffer-pos text)))))
+
+(defun inkling--display-suggestions ()
+  "Display suggestions using the configured display style."
+  (when inkling--suggestion-positions
+    (pcase inkling-display-style
+      ('inline (inkling--display-suggestions-inline))
+      ('popup (inkling--display-suggestions-popup))
+      (_ (inkling--display-suggestions-inline)))))
 
 (defun inkling-next-suggestion ()
   "Navigate to the next suggestion."
   (interactive)
   (when inkling--suggestion-positions
+    ;; Clear existing popups
+    (tooltip-hide)
+    
+    ;; Update index
     (setq inkling--current-suggestion-index
           (% (1+ inkling--current-suggestion-index)
              (length inkling--suggestion-positions)))
@@ -265,17 +370,26 @@ Optional _INFO contains metadata from gptel about the response."
     (let* ((suggestion (nth inkling--current-suggestion-index 
                           inkling--suggestion-positions))
            (pos (car suggestion))
+           (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
       
       ;; Move to suggestion position
-      (goto-char buffer-pos))))
+      (goto-char buffer-pos)
+      
+      ;; Show popup if using popup display style
+      (when (eq inkling-display-style 'popup)
+        (inkling--show-popup buffer-pos text)))))
 
 (defun inkling-previous-suggestion ()
   "Navigate to the previous suggestion."
   (interactive)
   (when inkling--suggestion-positions
+    ;; Clear existing popups
+    (tooltip-hide)
+    
+    ;; Update index
     (setq inkling--current-suggestion-index
           (% (+ (length inkling--suggestion-positions)
                (1- inkling--current-suggestion-index))
@@ -284,12 +398,17 @@ Optional _INFO contains metadata from gptel about the response."
     (let* ((suggestion (nth inkling--current-suggestion-index 
                           inkling--suggestion-positions))
            (pos (car suggestion))
+           (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
       
       ;; Move to suggestion position
-      (goto-char buffer-pos))))
+      (goto-char buffer-pos)
+      
+      ;; Show popup if using popup display style
+      (when (eq inkling-display-style 'popup)
+        (inkling--show-popup buffer-pos text)))))
 
 (defun inkling-accept-suggestion ()
   "Accept the current suggestion."
@@ -303,6 +422,9 @@ Optional _INFO contains metadata from gptel about the response."
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
       
+      ;; Hide tooltips
+      (tooltip-hide)
+      
       ;; Insert the suggestion
       (save-excursion
         (goto-char buffer-pos)
@@ -315,7 +437,13 @@ Optional _INFO contains metadata from gptel about the response."
 (defun inkling-dismiss-suggestions ()
   "Dismiss all current suggestions."
   (interactive)
+  ;; Hide tooltips
+  (tooltip-hide)
+  
+  ;; Clear overlays
   (inkling--clear-overlays)
+  
+  ;; Reset state
   (setq inkling--suggestion-positions nil)
   (setq inkling--current-suggestion-index -1))
 

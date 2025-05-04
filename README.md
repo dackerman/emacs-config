@@ -65,7 +65,7 @@ The `inkling` package provides intelligent LLM code suggestions in Emacs:
 
 - Real-time LLM suggestions as you edit code
 - Automatic error fixing using LSP diagnostics
-- Ghost-text overlays showing inline suggestions
+- Popups showing code suggestions (or optional inline display)
 - Tab-based navigation between suggestions
 - Company-mode integration
 
