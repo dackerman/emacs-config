@@ -312,12 +312,30 @@ when email comes in."
           :stream t
           :key gemini-api-key))
 
+  ;; Load Cursor-assist for code editing
+  (straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
+                                        :files ("*.el")))
 
-  ;; Keybindings for quick access
+  ;; If not using a GitHub repo yet, load from local file
+  (load-file "~/.emacs.d/lisp/cursor-assist.el")
+
+  ;; Configure cursor-assist
+  (setq cursor-assist-backend 'claude
+        cursor-assist-temperature 0.2
+        cursor-assist-idle-delay 0.8
+        cursor-assist-context-size 50)
+
+  ;; Enable cursor-assist for programming modes
+  (add-hook 'prog-mode-hook 'cursor-assist-mode)
+
+  ;; Global key to toggle cursor-assist mode
+  (global-set-key (kbd "C-c C-a") 'cursor-assist-mode)
+
+  ;; Keybindings for quick gptel access
   (global-set-key (kbd "C-c g") 'gptel)
   (global-set-key (kbd "C-c s") 'gptel-send)
 
-  ;; Default settings
+  ;; Default gptel settings
   (setq gptel-model 'claude-3-7-sonnet-20250219
         gptel-backend claude
         gptel-default-mode 'org-mode
