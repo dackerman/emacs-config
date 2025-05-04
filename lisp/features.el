@@ -313,8 +313,9 @@ when email comes in."
           :key gemini-api-key))
 
   ;; Load Cursor-assist for code editing
-  (straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
-                                        :files ("*.el")))
+
+                                        ;(straight-use-package '(cursor-assist :type git :host github :repo "your-username/cursor-assist"
+                                        ;                                      :files ("*.el")))
 
   ;; If not using a GitHub repo yet, load from local file
   (load-file "~/.emacs.d/lisp/cursor-assist.el")

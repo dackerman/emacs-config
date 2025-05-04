@@ -26,3 +26,4 @@ straight/*
 !straight/versions/default.el
 
 init.el
+**/.claude/settings.local.json
