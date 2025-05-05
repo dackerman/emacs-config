@@ -317,10 +317,6 @@ when email comes in."
   (straight-use-package 'company)
 
   ;; Load inkling for code editing
-  ;; (straight-use-package '(inkling :type git :host github :repo "your-username/inkling"
-  ;;                                 :files ("*.el")))
-
-  ;; If not using a GitHub repo yet, load from local file
   (load-file "~/.emacs.d/lisp/inkling.el")
 
   ;; Configure inkling and set up gptel defaults
