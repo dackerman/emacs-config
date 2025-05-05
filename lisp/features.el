@@ -315,7 +315,7 @@ when email comes in."
   ;; Make sure dependencies for inkling are loaded first
   (straight-use-package 'lsp-mode)
   (straight-use-package 'company)
-  
+
   ;; Load inkling for code editing
   ;; (straight-use-package '(inkling :type git :host github :repo "your-username/inkling"
   ;;                                 :files ("*.el")))

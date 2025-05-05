@@ -27,3 +27,4 @@ straight/*
 
 init.el
 **/.claude/settings.local.json
+inkling-log.org

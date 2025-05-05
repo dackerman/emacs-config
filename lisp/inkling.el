@@ -61,7 +61,7 @@
 
 (defcustom inkling-popup-foreground "#BBBBBB"
   "Foreground color for suggestion popups."
-  :type 'string  
+  :type 'string
   :group 'inkling)
 
 (defcustom inkling-popup-max-width 80
@@ -223,9 +223,9 @@ TYPE can be 'request, 'response, or 'error."
         (unless (> (buffer-size) 0)
           (insert "#+TITLE: Inkling LLM Interaction Log\n")
           (insert "#+OPTIONS: ^:nil\n\n"))
-        
+
         (insert (format "* %s - %s\n" timestamp type))
-        
+
         (cond
          ((eq type 'request)
           (let ((buffer-name (plist-get data :buffer-name))
@@ -242,7 +242,7 @@ TYPE can be 'request, 'response, or 'error."
             (insert "** Prompt:\n#+BEGIN_SRC\n")
             (insert prompt)
             (insert "\n#+END_SRC\n")))
-         
+
          ((eq type 'response)
           (let ((response-text (plist-get data :response))
                 (tokens (plist-get data :tokens))
@@ -254,10 +254,10 @@ TYPE can be 'request, 'response, or 'error."
             (insert "** Response:\n#+BEGIN_SRC\n")
             (insert response-text)
             (insert "\n#+END_SRC\n")))
-         
+
          ((eq type 'error)
           (insert (format "** Error: %s\n" data))))
-        
+
         ;; Write back to file
         (write-region (point-min) (point-max) inkling-log-file nil 'silent)))))
 
@@ -281,12 +281,12 @@ This is a simple approximation based on whitespace-separated words."
   (let* ((total-tokens (+ input-tokens output-tokens))
          (cost (inkling--estimate-cost input-tokens output-tokens model))
          (backend-stats (gethash model inkling--stats-backend-usage)))
-    
+
     ;; Update global stats
     (cl-incf inkling--stats-total-tokens total-tokens)
     (cl-incf inkling--stats-total-cost cost)
     (cl-incf inkling--stats-total-responses)
-    
+
     ;; Update backend-specific stats
     (if backend-stats
         (progn
@@ -304,41 +304,41 @@ This is a simple approximation based on whitespace-separated words."
 INFO contains metadata from gptel about the response."
   (setq inkling--active-request nil)
   (setq inkling--suggestion-positions nil)
-  
+
   (inkling--clear-overlays)
-  
+
   ;; Log the response and gather statistics
   (when info
     (let* ((model (plist-get (plist-get info :data) :model))
            (input-text (plist-get (plist-get info :data) :messages))
            (input-tokens (inkling--estimate-tokens (format "%s" input-text)))
            (output-tokens (inkling--estimate-tokens response)))
-      
+
       ;; Update stats
       (inkling--update-stats input-tokens output-tokens model)
-      
+
       ;; Log response
       (inkling--log-to-file 'response
                           (list :response response
                                 :tokens (+ input-tokens output-tokens)
                                 :cost (inkling--estimate-cost input-tokens output-tokens model)
                                 :model model))))
-  
+
   ;; Process the response content
   (with-temp-buffer
     (insert response)
     (goto-char (point-min))
-    
+
     (while (re-search-forward "\\[\\([0-9]+\\):\\([0-9]+\\)\\]" nil t)
       (let ((line (string-to-number (match-string 1)))
             (column (string-to-number (match-string 2)))
             (pos (point))
             (suggestion-start nil)
             (suggestion-text ""))
-        
+
         (forward-line)
         (setq suggestion-start (point))
-        
+
         ;; Extract suggestion text until next pattern or end of buffer
         (if (re-search-forward "\\[\\([0-9]+\\):\\([0-9]+\\)\\]" nil t)
             (progn
@@ -346,14 +346,14 @@ INFO contains metadata from gptel about the response."
               (setq suggestion-text (buffer-substring-no-properties suggestion-start (point)))
               (goto-char (match-beginning 0)))
           (setq suggestion-text (buffer-substring-no-properties suggestion-start (point-max))))
-        
+
         ;; Add to suggestion positions list
-        (push (cons (cons line column) (string-trim suggestion-text)) 
+        (push (cons (cons line column) (string-trim suggestion-text))
               inkling--suggestion-positions)))
-    
-    (setq inkling--suggestion-positions 
+
+    (setq inkling--suggestion-positions
           (nreverse inkling--suggestion-positions)))
-  
+
   (inkling--display-suggestions))
 
 (defun inkling--request-suggestions ()
@@ -364,14 +364,14 @@ INFO contains metadata from gptel about the response."
     (let ((buffer-text (inkling--get-buffer-segment))
           (diagnostics (inkling--get-lsp-diagnostics))
           (cursor-pos (cons (line-number-at-pos) (current-column))))
-      
+
       ;; Only process if buffer content has changed
       (unless (equal buffer-text inkling--last-buffer-text)
         (setq inkling--last-buffer-text buffer-text)
-        
+
         ;; Prepare prompt
         (let ((prompt (inkling--prepare-prompt buffer-text diagnostics cursor-pos)))
-          
+
           ;; Log the request
           (when inkling-enable-logging
             (cl-incf inkling--stats-total-requests)
@@ -381,14 +381,14 @@ INFO contains metadata from gptel about the response."
                                       :prompt prompt
                                       :backend gptel-backend
                                       :context (when inkling-log-with-context buffer-text))))
-          
+
           ;; Request suggestions from gptel
           ;; Use global gptel settings - must ensure these are set before activation
           (setq inkling--active-request
                 (gptel-request
                  prompt
                  :callback #'inkling--process-response
-                 :system "You are a code assistant that specializes in providing code suggestions."))))))))
+                 :system "You are a code assistant that specializes in providing code suggestions.")))))))
 
 (defun inkling--clear-overlays ()
   "Clear all suggestion overlays."
@@ -438,17 +438,17 @@ INFO contains metadata from gptel about the response."
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column))
            (ov (make-overlay buffer-pos buffer-pos)))
-      
+
       ;; Create overlay for suggestion
       (overlay-put ov 'inkling-suggestion t)
       (overlay-put ov 'after-string
                    (propertize (concat " " text)
                               'face inkling-suggestion-face
                               'inkling-suggestion text))
-      
+
       ;; Store overlay
       (push ov inkling--overlays)))
-  
+
   ;; Add navigation indicators if we have multiple suggestions
   (when (> (length inkling--suggestion-positions) 1)
     (dolist (suggestion inkling--suggestion-positions)
@@ -457,13 +457,13 @@ INFO contains metadata from gptel about the response."
              (column (cdr pos))
              (buffer-pos (inkling--get-position-in-buffer line column))
              (nav-ov (make-overlay buffer-pos buffer-pos)))
-        
+
         ;; Create overlay for navigation indicator
         (overlay-put nav-ov 'inkling-navigation t)
         (overlay-put nav-ov 'before-string
                      (propertize " [Tab to navigate] "
                                 'face inkling-navigation-face))
-        
+
         ;; Store overlay
         (push nav-ov inkling--overlays)))))
 
@@ -478,11 +478,11 @@ INFO contains metadata from gptel about the response."
              (column (cdr pos))
              (buffer-pos (inkling--get-position-in-buffer line column))
              (indicator-ov (make-overlay buffer-pos buffer-pos)))
-        
+
         ;; Add a clickable indicator that will show the popup
         (overlay-put indicator-ov 'inkling-suggestion t)
         (overlay-put indicator-ov 'after-string
-                     (propertize " 💡" 
+                     (propertize " 💡"
                                 'face inkling-navigation-face
                                 'mouse-face 'highlight
                                 'help-echo "Click to view suggestion"
@@ -491,16 +491,16 @@ INFO contains metadata from gptel about the response."
                                           (define-key map [mouse-1]
                                             (lambda (event)
                                               (interactive "e")
-                                              (inkling--show-popup 
-                                               buffer-pos 
+                                              (inkling--show-popup
+                                               buffer-pos
                                                text)))
                                           map)))
-        
+
         ;; Store overlay
         (push indicator-ov inkling--overlays)))
-    
+
     ;; For the first suggestion (current index), show the popup immediately
-    (when (and inkling--suggestion-positions 
+    (when (and inkling--suggestion-positions
                (>= inkling--current-suggestion-index 0)
                (< inkling--current-suggestion-index (length inkling--suggestion-positions)))
       (let* ((suggestion (nth inkling--current-suggestion-index inkling--suggestion-positions))
@@ -525,23 +525,23 @@ INFO contains metadata from gptel about the response."
   (when inkling--suggestion-positions
     ;; Clear existing popups
     (tooltip-hide)
-    
+
     ;; Update index
     (setq inkling--current-suggestion-index
           (% (1+ inkling--current-suggestion-index)
              (length inkling--suggestion-positions)))
-    
-    (let* ((suggestion (nth inkling--current-suggestion-index 
+
+    (let* ((suggestion (nth inkling--current-suggestion-index
                           inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
-      
+
       ;; Move to suggestion position
       (goto-char buffer-pos)
-      
+
       ;; Show popup if using popup display style
       (when (eq inkling-display-style 'popup)
         (inkling--show-popup buffer-pos text)))))
@@ -552,24 +552,24 @@ INFO contains metadata from gptel about the response."
   (when inkling--suggestion-positions
     ;; Clear existing popups
     (tooltip-hide)
-    
+
     ;; Update index
     (setq inkling--current-suggestion-index
           (% (+ (length inkling--suggestion-positions)
                (1- inkling--current-suggestion-index))
              (length inkling--suggestion-positions)))
-    
-    (let* ((suggestion (nth inkling--current-suggestion-index 
+
+    (let* ((suggestion (nth inkling--current-suggestion-index
                           inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
-      
+
       ;; Move to suggestion position
       (goto-char buffer-pos)
-      
+
       ;; Show popup if using popup display style
       (when (eq inkling-display-style 'popup)
         (inkling--show-popup buffer-pos text)))))
@@ -578,22 +578,22 @@ INFO contains metadata from gptel about the response."
   "Accept the current suggestion."
   (interactive)
   (when inkling--suggestion-positions
-    (let* ((suggestion (nth inkling--current-suggestion-index 
+    (let* ((suggestion (nth inkling--current-suggestion-index
                          inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
-      
+
       ;; Hide tooltips
       (tooltip-hide)
-      
+
       ;; Insert the suggestion
       (save-excursion
         (goto-char buffer-pos)
         (insert text))
-      
+
       ;; Clear overlays and update
       (inkling--clear-overlays)
       (inkling--request-suggestions))))
@@ -603,10 +603,10 @@ INFO contains metadata from gptel about the response."
   (interactive)
   ;; Hide tooltips
   (tooltip-hide)
-  
+
   ;; Clear overlays
   (inkling--clear-overlays)
-  
+
   ;; Reset state
   (setq inkling--suggestion-positions nil)
   (setq inkling--current-suggestion-index -1))
@@ -692,14 +692,14 @@ INFO contains metadata from gptel about the response."
     (erase-buffer)
     (org-mode)
     (insert "#+TITLE: Inkling Usage Statistics\n\n")
-    
+
     ;; Insert session totals
     (insert "* Session Totals\n")
     (insert (format "- Total Requests: %d\n" inkling--stats-total-requests))
     (insert (format "- Total Responses: %d\n" inkling--stats-total-responses))
     (insert (format "- Total Tokens Used: %d\n" inkling--stats-total-tokens))
     (insert (format "- Estimated Total Cost: $%.4f\n\n" inkling--stats-total-cost))
-    
+
     ;; Insert per-model stats
     (insert "* Per-Model Statistics\n")
     (maphash
@@ -709,7 +709,7 @@ INFO contains metadata from gptel about the response."
        (insert (format "- Tokens: %d\n" (plist-get stats :tokens)))
        (insert (format "- Estimated Cost: $%.4f\n\n" (plist-get stats :cost))))
      inkling--stats-backend-usage)
-    
+
     ;; Cost comparison information
     (insert "* Model Cost Comparison (per 1000 tokens)\n")
     (insert "| Model | Input Cost | Output Cost |\n")
@@ -719,17 +719,17 @@ INFO contains metadata from gptel about the response."
              (costs (cdr model-cost))
              (input-cost (cdr (assoc 'input costs)))
              (output-cost (cdr (assoc 'output costs))))
-        (insert (format "| %s | $%.4f | $%.4f |\n" 
-                        model 
+        (insert (format "| %s | $%.4f | $%.4f |\n"
+                        model
                         (* (or input-cost 0.0001) 1000)
                         (* (or output-cost 0.0003) 1000)))))
-    
+
     ;; Tips for cost optimization
     (insert "\n* Cost Optimization Tips\n")
     (insert "- Consider using smaller models for simpler tasks\n")
     (insert "- Adjust context size to reduce token usage\n")
     (insert "- Increase idle delay to reduce frequency of requests\n")
-    
+
     ;; Display the buffer
     (goto-char (point-min))
     (switch-to-buffer (current-buffer))))
