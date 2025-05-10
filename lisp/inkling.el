@@ -346,10 +346,10 @@ INFO contains metadata from gptel about the response."
 
       ;; Log response
       (inkling--log-to-file 'response
-                          (list :response response
-                                :tokens (+ input-tokens output-tokens)
-                                :cost (inkling--estimate-cost input-tokens output-tokens model)
-                                :model model))))
+                            (list :response response
+                                  :tokens (+ input-tokens output-tokens)
+                                  :cost (inkling--estimate-cost input-tokens output-tokens model)
+                                  :model model))))
 
   ;; Process the response content
   (with-temp-buffer
@@ -406,26 +406,26 @@ INFO contains metadata from gptel about the response."
           (when inkling-enable-logging
             (cl-incf inkling--stats-total-requests)
             (inkling--log-to-file 'request
-                                (list :buffer-name (buffer-name)
-                                      :major-mode major-mode
-                                      :prompt prompt
-                                      :backend gptel-backend
-                                      :context (when inkling-log-with-context buffer-text))))
+                                  (list :buffer-name (buffer-name)
+                                        :major-mode major-mode
+                                        :prompt prompt
+                                        :backend gptel-backend
+                                        :context (when inkling-log-with-context buffer-text))))
 
           ;; Request suggestions from gptel
           ;; Use global gptel settings - must ensure these are set before activation
           (setq inkling--active-request
                 (gptel-request
-                 prompt
-                 :callback #'inkling--process-response
-                 :system "You are a code assistant that specializes in providing code suggestions.")))))))
+                    prompt
+                  :callback #'inkling--process-response
+                  :system "You are a code assistant that specializes in providing code suggestions.")))))))
 
 (defun inkling--clear-overlays ()
   "Clear all suggestion overlays."
   (dolist (ov inkling--overlays)
     (delete-overlay ov))
   (setq inkling--overlays nil)
-  
+
   ;; Also clear previews when clearing overlays
   (inkling--clear-previews))
 
@@ -442,8 +442,8 @@ INFO contains metadata from gptel about the response."
   (let ((end-pos nil))
     (save-excursion
       (goto-char pos)
-      (setq end-pos (min (point-max) 
-                         (save-excursion 
+      (setq end-pos (min (point-max)
+                         (save-excursion
                            (forward-char (length suggestion-text))
                            (point))))
       (cons pos end-pos))))
@@ -453,7 +453,7 @@ INFO contains metadata from gptel about the response."
   (when inkling--suggestion-positions
     ;; Clear any existing overlays and previews
     (inkling--clear-previews)
-    
+
     ;; Use the first suggestion by default
     (setq inkling--current-suggestion-index 0)
     (let* ((suggestion (nth inkling--current-suggestion-index inkling--suggestion-positions))
@@ -462,13 +462,13 @@ INFO contains metadata from gptel about the response."
            (line (car pos))
            (column (cdr pos))
            (buffer-pos (inkling--get-position-in-buffer line column)))
-      
+
       ;; Store the current suggestion text
       (setq inkling--current-suggestion text)
-      
+
       ;; Compute the region that would be modified
       (setq inkling--suggestion-region (inkling--compute-suggestion-region buffer-pos text))
-      
+
       ;; Create highlight overlay
       (let ((ov (make-overlay (car inkling--suggestion-region) (cdr inkling--suggestion-region))))
         (overlay-put ov 'face inkling-highlight-face)
@@ -482,28 +482,28 @@ INFO contains metadata from gptel about the response."
   (when (and inkling--suggestion-positions inkling--suggestion-region)
     ;; Save the original text
     (unless inkling--preview-active
-      (setq inkling--original-text 
-            (buffer-substring-no-properties 
-             (car inkling--suggestion-region) 
+      (setq inkling--original-text
+            (buffer-substring-no-properties
+             (car inkling--suggestion-region)
              (cdr inkling--suggestion-region)))
-      
+
       ;; Apply the suggestion text temporarily
       (save-excursion
         (let ((inhibit-modification-hooks t))
           (delete-region (car inkling--suggestion-region) (cdr inkling--suggestion-region))
           (goto-char (car inkling--suggestion-region))
           (insert inkling--current-suggestion)))
-      
+
       ;; Create preview overlay on the inserted text
-      (setq inkling--preview-overlay 
+      (setq inkling--preview-overlay
             (make-overlay (car inkling--suggestion-region)
-                         (+ (car inkling--suggestion-region) (length inkling--current-suggestion))))
+                          (+ (car inkling--suggestion-region) (length inkling--current-suggestion))))
       (overlay-put inkling--preview-overlay 'face inkling-preview-face)
       (overlay-put inkling--preview-overlay 'priority 200)
-      
+
       ;; Set the preview state
       (setq inkling--preview-active t)
-      
+
       ;; Set up temporary keymap for accepting/canceling preview
       (let ((map (make-sparse-keymap)))
         (define-key map (kbd "TAB") 'inkling-accept-suggestion)
@@ -521,20 +521,20 @@ INFO contains metadata from gptel about the response."
     ;; Restore original text
     (save-excursion
       (let ((inhibit-modification-hooks t))
-        (delete-region (car inkling--suggestion-region) 
+        (delete-region (car inkling--suggestion-region)
                        (+ (car inkling--suggestion-region) (length inkling--current-suggestion)))
         (goto-char (car inkling--suggestion-region))
         (insert inkling--original-text)))
-    
+
     ;; Remove preview overlay
     (when inkling--preview-overlay
       (delete-overlay inkling--preview-overlay)
       (setq inkling--preview-overlay nil))
-    
+
     ;; Reset preview state
     (setq inkling--preview-active nil)
     (setq inkling--original-text nil))
-  
+
   ;; Allow this function to be called as a hook without arguments
   nil)
 
@@ -568,8 +568,8 @@ INFO contains metadata from gptel about the response."
       (goto-char pos)
       ;; Create a tooltip with our text
       (tooltip-show formatted-text
-                   (list :fg-color inkling-popup-foreground
-                         :bg-color inkling-popup-background)))))
+                    (list :fg-color inkling-popup-foreground
+                          :bg-color inkling-popup-background)))))
 
 (defun inkling--display-suggestions-inline ()
   "Display suggestion overlays directly in the buffer (traditional method)."
@@ -585,8 +585,8 @@ INFO contains metadata from gptel about the response."
       (overlay-put ov 'inkling-suggestion t)
       (overlay-put ov 'after-string
                    (propertize (concat " " text)
-                              'face inkling-suggestion-face
-                              'inkling-suggestion text))
+                               'face inkling-suggestion-face
+                               'inkling-suggestion text))
 
       ;; Store overlay
       (push ov inkling--overlays)))
@@ -604,7 +604,7 @@ INFO contains metadata from gptel about the response."
         (overlay-put nav-ov 'inkling-navigation t)
         (overlay-put nav-ov 'before-string
                      (propertize " [Tab to navigate] "
-                                'face inkling-navigation-face))
+                                 'face inkling-navigation-face))
 
         ;; Store overlay
         (push nav-ov inkling--overlays)))))
@@ -625,18 +625,18 @@ INFO contains metadata from gptel about the response."
         (overlay-put indicator-ov 'inkling-suggestion t)
         (overlay-put indicator-ov 'after-string
                      (propertize " 💡"
-                                'face inkling-navigation-face
-                                'mouse-face 'highlight
-                                'help-echo "Click to view suggestion"
-                                'inkling-suggestion text
-                                'keymap (let ((map (make-sparse-keymap)))
-                                          (define-key map [mouse-1]
-                                            (lambda (event)
-                                              (interactive "e")
-                                              (inkling--show-popup
-                                               buffer-pos
-                                               text)))
-                                          map)))
+                                 'face inkling-navigation-face
+                                 'mouse-face 'highlight
+                                 'help-echo "Click to view suggestion"
+                                 'inkling-suggestion text
+                                 'keymap (let ((map (make-sparse-keymap)))
+                                           (define-key map [mouse-1]
+                                                       (lambda (event)
+                                                         (interactive "e")
+                                                         (inkling--show-popup
+                                                          buffer-pos
+                                                          text)))
+                                           map)))
 
         ;; Store overlay
         (push indicator-ov inkling--overlays)))
@@ -675,7 +675,7 @@ INFO contains metadata from gptel about the response."
              (length inkling--suggestion-positions)))
 
     (let* ((suggestion (nth inkling--current-suggestion-index
-                          inkling--suggestion-positions))
+                            inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
@@ -699,11 +699,11 @@ INFO contains metadata from gptel about the response."
     ;; Update index
     (setq inkling--current-suggestion-index
           (% (+ (length inkling--suggestion-positions)
-               (1- inkling--current-suggestion-index))
+                (1- inkling--current-suggestion-index))
              (length inkling--suggestion-positions)))
 
     (let* ((suggestion (nth inkling--current-suggestion-index
-                          inkling--suggestion-positions))
+                            inkling--suggestion-positions))
            (pos (car suggestion))
            (text (cdr suggestion))
            (line (car pos))
@@ -728,14 +728,14 @@ INFO contains metadata from gptel about the response."
           (when inkling--preview-overlay
             (delete-overlay inkling--preview-overlay)
             (setq inkling--preview-overlay nil))
-          
+
           ;; Reset preview state but keep the changes
           (setq inkling--preview-active nil)
           (setq inkling--original-text nil))
-      
+
       ;; If no preview, apply the suggestion directly
       (let* ((suggestion (nth inkling--current-suggestion-index
-                           inkling--suggestion-positions))
+                              inkling--suggestion-positions))
              (pos (car suggestion))
              (text (cdr suggestion))
              (line (car pos))
@@ -748,14 +748,14 @@ INFO contains metadata from gptel about the response."
         ;; Delete any text in the suggestion region if using highlight mode
         (when (and (eq inkling-display-style 'highlight)
                    inkling--suggestion-region)
-          (delete-region (car inkling--suggestion-region) 
+          (delete-region (car inkling--suggestion-region)
                          (cdr inkling--suggestion-region)))
 
         ;; Insert the suggestion
         (save-excursion
           (goto-char buffer-pos)
           (insert text))))
-    
+
     ;; Clear overlays and update
     (inkling--clear-overlays)
     (inkling--request-suggestions)))
@@ -768,7 +768,7 @@ INFO contains metadata from gptel about the response."
 
   ;; Clear any active previews
   (inkling--clear-previews)
-  
+
   ;; Clear overlays
   (inkling--clear-overlays)
 
@@ -833,7 +833,7 @@ INFO contains metadata from gptel about the response."
       (progn
         (setq inkling--timer
               (run-with-idle-timer inkling-idle-delay t
-                                  #'inkling--request-suggestions))
+                                   #'inkling--request-suggestions))
         (add-hook 'lsp-diagnostics-updated-hook #'inkling--request-suggestions nil t)
         (inkling--setup-company)
         (inkling--request-suggestions))

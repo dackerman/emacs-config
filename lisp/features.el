@@ -320,7 +320,7 @@ when email comes in."
   (load-file "~/.emacs.d/lisp/inkling.el")
 
   ;; Configure inkling and set up gptel defaults
-  (setq gptel-backend claude  ; Set global gptel backend for inkling
+  (setq gptel-backend openai  ; Set global gptel backend for inkling
         gptel-temperature 0.2  ; Set global temperature for gptel
         inkling-idle-delay 0.8
         inkling-context-size 50
