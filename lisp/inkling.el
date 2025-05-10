@@ -49,6 +49,16 @@
   :type 'face
   :group 'inkling)
 
+(defcustom inkling-highlight-face '(:background "#3a3d4d")
+  "Face for highlighting regions that would be changed by a suggestion."
+  :type 'face
+  :group 'inkling)
+
+(defcustom inkling-preview-face '(:background "#4b4e6d")
+  "Face for previewing suggestion changes."
+  :type 'face
+  :group 'inkling)
+
 (defcustom inkling-navigation-face '(:inherit font-lock-keyword-face :box t)
   "Face for suggestion navigation indicators."
   :type 'face
@@ -69,12 +79,14 @@
   :type 'number
   :group 'inkling)
 
-(defcustom inkling-display-style 'popup
+(defcustom inkling-display-style 'highlight
   "How to display suggestions.
 Options are:
+- 'highlight: Highlight regions that would be changed (recommended)
 - 'popup: Show suggestions in a popup window
 - 'inline: Show suggestions as inline text (old behavior)"
-  :type '(choice (const :tag "Popup" popup)
+  :type '(choice (const :tag "Highlight" highlight)
+                 (const :tag "Popup" popup)
                  (const :tag "Inline" inline))
   :group 'inkling)
 
@@ -127,6 +139,21 @@ Warning: This will store code snippets in the log file."
 
 (defvar inkling--active-request nil
   "Currently active LLM request.")
+
+(defvar inkling--current-suggestion nil
+  "Current active suggestion text.")
+
+(defvar inkling--suggestion-region nil
+  "Region (beg . end) that would be modified by the current suggestion.")
+
+(defvar inkling--preview-active nil
+  "Whether the suggestion preview is currently being shown.")
+
+(defvar inkling--preview-overlay nil
+  "Overlay used for previewing the suggestion.")
+
+(defvar inkling--original-text nil
+  "Original text before preview was applied.")
 
 (defvar inkling--stats-total-tokens 0
   "Total number of tokens used in the current session.")
@@ -397,7 +424,10 @@ INFO contains metadata from gptel about the response."
   "Clear all suggestion overlays."
   (dolist (ov inkling--overlays)
     (delete-overlay ov))
-  (setq inkling--overlays nil))
+  (setq inkling--overlays nil)
+  
+  ;; Also clear previews when clearing overlays
+  (inkling--clear-previews))
 
 (defun inkling--get-position-in-buffer (line column)
   "Get buffer position for LINE and COLUMN."
@@ -406,6 +436,115 @@ INFO contains metadata from gptel about the response."
     (forward-line (1- line))
     (move-to-column column)
     (point)))
+
+(defun inkling--compute-suggestion-region (pos suggestion-text)
+  "Compute region that would be modified by SUGGESTION-TEXT at POS."
+  (let ((end-pos nil))
+    (save-excursion
+      (goto-char pos)
+      (setq end-pos (min (point-max) 
+                         (save-excursion 
+                           (forward-char (length suggestion-text))
+                           (point))))
+      (cons pos end-pos))))
+
+(defun inkling--display-suggestions-highlight ()
+  "Display suggestions by highlighting regions that would be modified."
+  (when inkling--suggestion-positions
+    ;; Clear any existing overlays and previews
+    (inkling--clear-previews)
+    
+    ;; Use the first suggestion by default
+    (setq inkling--current-suggestion-index 0)
+    (let* ((suggestion (nth inkling--current-suggestion-index inkling--suggestion-positions))
+           (pos (car suggestion))
+           (text (cdr suggestion))
+           (line (car pos))
+           (column (cdr pos))
+           (buffer-pos (inkling--get-position-in-buffer line column)))
+      
+      ;; Store the current suggestion text
+      (setq inkling--current-suggestion text)
+      
+      ;; Compute the region that would be modified
+      (setq inkling--suggestion-region (inkling--compute-suggestion-region buffer-pos text))
+      
+      ;; Create highlight overlay
+      (let ((ov (make-overlay (car inkling--suggestion-region) (cdr inkling--suggestion-region))))
+        (overlay-put ov 'face inkling-highlight-face)
+        (overlay-put ov 'inkling-suggestion t)
+        (overlay-put ov 'help-echo "TAB: Accept, S-TAB: Preview, ESC: Dismiss")
+        (push ov inkling--overlays)))))
+
+(defun inkling--preview-suggestion ()
+  "Preview the current suggestion by temporarily applying it."
+  (interactive)
+  (when (and inkling--suggestion-positions inkling--suggestion-region)
+    ;; Save the original text
+    (unless inkling--preview-active
+      (setq inkling--original-text 
+            (buffer-substring-no-properties 
+             (car inkling--suggestion-region) 
+             (cdr inkling--suggestion-region)))
+      
+      ;; Apply the suggestion text temporarily
+      (save-excursion
+        (let ((inhibit-modification-hooks t))
+          (delete-region (car inkling--suggestion-region) (cdr inkling--suggestion-region))
+          (goto-char (car inkling--suggestion-region))
+          (insert inkling--current-suggestion)))
+      
+      ;; Create preview overlay on the inserted text
+      (setq inkling--preview-overlay 
+            (make-overlay (car inkling--suggestion-region)
+                         (+ (car inkling--suggestion-region) (length inkling--current-suggestion))))
+      (overlay-put inkling--preview-overlay 'face inkling-preview-face)
+      (overlay-put inkling--preview-overlay 'priority 200)
+      
+      ;; Set the preview state
+      (setq inkling--preview-active t)
+      
+      ;; Set up temporary keymap for accepting/canceling preview
+      (let ((map (make-sparse-keymap)))
+        (define-key map (kbd "TAB") 'inkling-accept-suggestion)
+        (define-key map [remap self-insert-command] 'inkling--cancel-preview)
+        (define-key map (kbd "<return>") 'inkling--cancel-preview)
+        (define-key map (kbd "<escape>") 'inkling--cancel-preview)
+        (define-key map (kbd "C-g") 'inkling--cancel-preview)
+        ;; Use set-transient-map for temporary keybinding
+        (set-transient-map map t 'inkling--cancel-preview)))))
+
+(defun inkling--cancel-preview ()
+  "Cancel the current suggestion preview."
+  (interactive)
+  (when inkling--preview-active
+    ;; Restore original text
+    (save-excursion
+      (let ((inhibit-modification-hooks t))
+        (delete-region (car inkling--suggestion-region) 
+                       (+ (car inkling--suggestion-region) (length inkling--current-suggestion)))
+        (goto-char (car inkling--suggestion-region))
+        (insert inkling--original-text)))
+    
+    ;; Remove preview overlay
+    (when inkling--preview-overlay
+      (delete-overlay inkling--preview-overlay)
+      (setq inkling--preview-overlay nil))
+    
+    ;; Reset preview state
+    (setq inkling--preview-active nil)
+    (setq inkling--original-text nil))
+  
+  ;; Allow this function to be called as a hook without arguments
+  nil)
+
+(defun inkling--clear-previews ()
+  "Clear any active suggestion previews."
+  (when inkling--preview-active
+    (inkling--cancel-preview))
+  (when inkling--preview-overlay
+    (delete-overlay inkling--preview-overlay)
+    (setq inkling--preview-overlay nil)))
 
 (defun inkling--format-popup-text (text)
   "Format TEXT for display in a popup."
@@ -520,7 +659,8 @@ INFO contains metadata from gptel about the response."
     (pcase inkling-display-style
       ('inline (inkling--display-suggestions-inline))
       ('popup (inkling--display-suggestions-popup))
-      (_ (inkling--display-suggestions-inline)))))
+      ('highlight (inkling--display-suggestions-highlight))
+      (_ (inkling--display-suggestions-highlight)))))
 
 (defun inkling-next-suggestion ()
   "Navigate to the next suggestion."
@@ -581,25 +721,44 @@ INFO contains metadata from gptel about the response."
   "Accept the current suggestion."
   (interactive)
   (when inkling--suggestion-positions
-    (let* ((suggestion (nth inkling--current-suggestion-index
-                         inkling--suggestion-positions))
-           (pos (car suggestion))
-           (text (cdr suggestion))
-           (line (car pos))
-           (column (cdr pos))
-           (buffer-pos (inkling--get-position-in-buffer line column)))
+    (if inkling--preview-active
+        ;; If preview is active, just accept it by keeping the changes and clearing state
+        (progn
+          ;; Remove preview overlay
+          (when inkling--preview-overlay
+            (delete-overlay inkling--preview-overlay)
+            (setq inkling--preview-overlay nil))
+          
+          ;; Reset preview state but keep the changes
+          (setq inkling--preview-active nil)
+          (setq inkling--original-text nil))
+      
+      ;; If no preview, apply the suggestion directly
+      (let* ((suggestion (nth inkling--current-suggestion-index
+                           inkling--suggestion-positions))
+             (pos (car suggestion))
+             (text (cdr suggestion))
+             (line (car pos))
+             (column (cdr pos))
+             (buffer-pos (inkling--get-position-in-buffer line column)))
 
-      ;; Hide tooltips
-      (tooltip-hide)
+        ;; Hide tooltips
+        (tooltip-hide)
 
-      ;; Insert the suggestion
-      (save-excursion
-        (goto-char buffer-pos)
-        (insert text))
+        ;; Delete any text in the suggestion region if using highlight mode
+        (when (and (eq inkling-display-style 'highlight)
+                   inkling--suggestion-region)
+          (delete-region (car inkling--suggestion-region) 
+                         (cdr inkling--suggestion-region)))
 
-      ;; Clear overlays and update
-      (inkling--clear-overlays)
-      (inkling--request-suggestions))))
+        ;; Insert the suggestion
+        (save-excursion
+          (goto-char buffer-pos)
+          (insert text))))
+    
+    ;; Clear overlays and update
+    (inkling--clear-overlays)
+    (inkling--request-suggestions)))
 
 (defun inkling-dismiss-suggestions ()
   "Dismiss all current suggestions."
@@ -607,12 +766,17 @@ INFO contains metadata from gptel about the response."
   ;; Hide tooltips
   (tooltip-hide)
 
+  ;; Clear any active previews
+  (inkling--clear-previews)
+  
   ;; Clear overlays
   (inkling--clear-overlays)
 
   ;; Reset state
   (setq inkling--suggestion-positions nil)
-  (setq inkling--current-suggestion-index -1))
+  (setq inkling--current-suggestion-index -1)
+  (setq inkling--current-suggestion nil)
+  (setq inkling--suggestion-region nil))
 
 ;;; Company integration
 
@@ -652,9 +816,9 @@ INFO contains metadata from gptel about the response."
 
 (defvar inkling-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "TAB") 'inkling-next-suggestion)
-    (define-key map (kbd "<backtab>") 'inkling-previous-suggestion)
-    (define-key map (kbd "RET") 'inkling-accept-suggestion)
+    (define-key map (kbd "TAB") 'inkling-accept-suggestion)
+    (define-key map (kbd "<backtab>") 'inkling--preview-suggestion)
+    (define-key map (kbd "<escape>") 'inkling-dismiss-suggestions)
     (define-key map (kbd "C-g") 'inkling-dismiss-suggestions)
     map)
   "Keymap for inkling mode.")

@@ -323,7 +323,8 @@ when email comes in."
   (setq gptel-backend claude  ; Set global gptel backend for inkling
         gptel-temperature 0.2  ; Set global temperature for gptel
         inkling-idle-delay 0.8
-        inkling-context-size 50)
+        inkling-context-size 50
+        inkling-display-style 'highlight)  ; Use the new highlight style by default
 
   ;; Enable inkling for programming modes
   (add-hook 'prog-mode-hook 'inkling-mode)
