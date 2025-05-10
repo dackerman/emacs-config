@@ -360,7 +360,10 @@ INFO contains metadata from gptel about the response."
   "Request code suggestions from the LLM."
   (when (and inkling-mode
              (not inkling--active-request)
-             (derived-mode-p 'prog-mode))
+             (derived-mode-p 'prog-mode)
+             ;; Skip minibuffer and non-file buffers
+             (not (minibufferp))
+             (not (string-match-p "\\*.*\\*" (buffer-name))))
     (let ((buffer-text (inkling--get-buffer-segment))
           (diagnostics (inkling--get-lsp-diagnostics))
           (cursor-pos (cons (line-number-at-pos) (current-column))))
