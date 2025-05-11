@@ -200,6 +200,7 @@ when email comes in."
 
   ;; Workspace management
   (straight-use-package 'perspective)
+  (setq persp-mode-prefix-key (kbd "C-c w"))  ; Set prefix key to avoid startup warning
   (persp-mode)
 
   ;; Parentheses
