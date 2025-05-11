@@ -322,8 +322,8 @@ when email comes in."
 
   ;; Configure gptel and inkling settings
   (setq ;; gptel settings
-        gptel-backend claude           ; Use Claude as backend
-        gptel-model 'claude-3-7-sonnet-20250219  ; Use Sonnet model
+        gptel-backend openai           ; Use OpenAI as backend
+        gptel-model '04-mini           ; Use O4-mini model for efficiency
         gptel-temperature 0.2          ; Lower temperature for more precise responses
         gptel-default-mode 'org-mode   ; Default mode for gptel buffers
         gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom
