@@ -119,7 +119,9 @@ Warning: This will store code snippets in the log file."
 
 (defcustom inkling-token-cost-map
   '((claude-3-7-sonnet-20250219 . ((input . 0.0005) (output . 0.0015)))
-    (04-mini . ((input . 0.00010) (output . 0.0003)))
+    (gpt-4o-mini . ((input . 0.00010) (output . 0.0003)))
+    (gpt-4 . ((input . 0.00030) (output . 0.0006)))
+    (gpt-3.5-turbo . ((input . 0.00001) (output . 0.00002)))
     (gemini-1.5-pro . ((input . 0.0001) (output . 0.0002))))
   "Cost per token in USD for different models (input and output costs)."
   :type '(alist :key-type symbol :value-type (alist :key-type symbol :value-type number))
@@ -392,9 +394,11 @@ TYPE can be 'request, 'response, or 'error."
 (defun inkling--estimate-tokens (text)
   "Roughly estimate the number of tokens in TEXT.
 This is a simple approximation based on whitespace-separated words."
-  (let ((word-count (length (split-string text nil t))))
-    ;; Adjust to approximate GPT tokenization (typically 4 chars per token)
-    (ceiling (* word-count 1.3))))
+  (if (or (null text) (string-empty-p text))
+      0  ; Return 0 for nil or empty text
+    (let ((word-count (length (split-string text nil t))))
+      ;; Adjust to approximate GPT tokenization (typically 4 chars per token)
+      (ceiling (* word-count 1.3)))))
 
 (defun inkling--estimate-cost (input-tokens output-tokens model)
   "Estimate cost based on INPUT-TOKENS and OUTPUT-TOKENS for MODEL."
@@ -434,6 +438,17 @@ INFO contains metadata from gptel about the response."
   (setq inkling--suggestion-positions nil)
 
   (inkling--clear-overlays)
+
+  ;; Check for API errors first
+  (when (and info (plist-get info :error))
+    (let ((error-msg (plist-get (plist-get info :error) :message)))
+      (message "Inkling API error: %s" error-msg)
+      (inkling--log-to-file 'error error-msg)
+      (cl-return-from inkling--process-response nil)))
+
+  ;; If response is nil but no error, just exit gracefully
+  (unless response
+    (cl-return-from inkling--process-response nil))
 
   ;; Log the response and gather statistics
   (when info
