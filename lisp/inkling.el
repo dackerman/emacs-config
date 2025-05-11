@@ -440,16 +440,18 @@ INFO contains metadata from gptel about the response."
 
   (inkling--clear-overlays)
 
-  ;; Check for API errors first
+  ;; Check for API errors or nil response
   (when (and info (plist-get info :error))
     (let ((error-msg (plist-get (plist-get info :error) :message)))
       (message "Inkling API error: %s" error-msg)
       (inkling--log-to-file 'error error-msg)
-      (cl-return-from inkling--process-response nil)))
+      (setq inkling--active-request nil)
+      (return nil)))
 
   ;; If response is nil but no error, just exit gracefully
   (unless response
-    (cl-return-from inkling--process-response nil))
+    (setq inkling--active-request nil)
+    (return nil))
 
   ;; Log the response and gather statistics
   (when info

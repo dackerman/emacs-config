@@ -353,7 +353,8 @@ when email comes in."
   (setq
    gptel-backend openai
    gptel-model 'o4-mini
-   gptel-temperature 0.2          ; Lower temperature for more precise responses
+   ;; o4-mini only supports the default temperature of 1.0
+   ;; Don't set gptel-temperature for o4-mini
    gptel-default-mode 'org-mode   ; Default mode for gptel buffers
    gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom
 
