@@ -936,6 +936,8 @@ INFO contains metadata from gptel about the response."
     (define-key map (kbd "<backtab>") 'inkling--preview-suggestion)
     (define-key map (kbd "<escape>") 'inkling-dismiss-suggestions)
     (define-key map (kbd "C-g") 'inkling-dismiss-suggestions)
+    (define-key map (kbd "C-c C-h") 'inkling-display-edit-history)
+    (define-key map (kbd "C-c C-s") 'inkling-display-statistics)
     map)
   "Keymap for inkling mode.")
 
@@ -1001,6 +1003,30 @@ INFO contains metadata from gptel about the response."
     (insert (format "- Total Tokens Used: %d\n" inkling--stats-total-tokens))
     (insert (format "- Estimated Total Cost: $%.4f\n\n" inkling--stats-total-cost))
 
+    ;; Insert edit statistics
+    (insert "* Current Buffer Edit History\n")
+    (if (and (local-variable-p 'inkling--edit-history)
+             inkling--edit-history)
+        (progn
+          (insert (format "- Total edits tracked: %d\n\n" (length inkling--edit-history)))
+          (insert "** Recent Edits:\n")
+          (let ((recent-edits (seq-take inkling--edit-history (min 5 (length inkling--edit-history)))))
+            (dolist (edit recent-edits)
+              (insert (format "*** %s edit at position %d\n"
+                              (inkling-edit-type edit)
+                              (inkling-edit-position edit)))
+              (insert "Before:\n")
+              (insert "#+BEGIN_EXAMPLE\n")
+              (when (inkling-edit-before edit)
+                (insert (or (inkling-edit-before edit) "None")))
+              (insert "\n#+END_EXAMPLE\n")
+              (insert "After:\n")
+              (insert "#+BEGIN_EXAMPLE\n")
+              (when (inkling-edit-after edit)
+                (insert (or (inkling-edit-after edit) "None")))
+              (insert "\n#+END_EXAMPLE\n\n"))))
+      (insert "No edit history in current buffer.\n\n"))
+
     ;; Insert per-model stats
     (insert "* Per-Model Statistics\n")
     (maphash
@@ -1034,6 +1060,51 @@ INFO contains metadata from gptel about the response."
     ;; Display the buffer
     (goto-char (point-min))
     (switch-to-buffer (current-buffer))))
+
+(defun inkling-display-edit-history ()
+  "Display the current buffer's edit history in a human-readable format."
+  (interactive)
+  (if (and (local-variable-p 'inkling--edit-history)
+           inkling--edit-history)
+      (with-current-buffer (get-buffer-create "*Inkling Edit History*")
+        (erase-buffer)
+        (org-mode)
+        (insert "#+TITLE: Inkling Edit History\n\n")
+        (insert (format "* Edit History for buffer: %s\n\n" (buffer-name (current-buffer))))
+
+        (let ((count 0))
+          (dolist (edit inkling--edit-history)
+            (cl-incf count)
+            (let ((timestamp (or (inkling-edit-timestamp edit)
+                                 (current-time-string))))
+              (insert (format "** Edit %d (%s)\n" count timestamp))
+              (insert (format "- Type: %s\n" (inkling-edit-type edit)))
+              (insert (format "- Position: %d\n" (inkling-edit-position edit)))
+
+              ;; Display before/after text
+              (insert "*** Before:\n")
+              (insert "#+BEGIN_SRC\n")
+              (when (inkling-edit-before edit)
+                (insert (or (inkling-edit-before edit) "None")))
+              (insert "\n#+END_SRC\n")
+
+              (insert "*** After:\n")
+              (insert "#+BEGIN_SRC\n")
+              (when (inkling-edit-after edit)
+                (insert (or (inkling-edit-after edit) "None")))
+              (insert "\n#+END_SRC\n")
+
+              ;; Display context if available
+              (when (inkling-edit-context edit)
+                (insert "*** Context:\n")
+                (insert "#+BEGIN_SRC\n")
+                (insert (inkling-edit-context edit))
+                (insert "\n#+END_SRC\n")))))
+
+        ;; Display the buffer
+        (goto-char (point-min))
+        (switch-to-buffer (current-buffer)))
+    (message "No edit history available for this buffer")))
 
 (defun inkling-open-log ()
   "Open the inkling log file."
