@@ -320,12 +320,18 @@ when email comes in."
   ;; Load inkling for code editing
   (load-file "~/.emacs.d/lisp/inkling.el")
 
-  ;; Configure inkling and set up gptel defaults
-  (setq gptel-backend openai  ; Set global gptel backend for inkling
-        gptel-temperature 0.2  ; Set global temperature for gptel
-        inkling-idle-delay 0.8
-        inkling-context-size 50
-        inkling-display-style 'highlight)  ; Use the new highlight style by default
+  ;; Configure gptel and inkling settings
+  (setq ;; gptel settings
+        gptel-backend claude           ; Use Claude as backend
+        gptel-model 'claude-3-7-sonnet-20250219  ; Use Sonnet model
+        gptel-temperature 0.2          ; Lower temperature for more precise responses
+        gptel-default-mode 'org-mode   ; Default mode for gptel buffers
+        gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom
+
+        ;; inkling settings
+        inkling-idle-delay 0.8         ; Delay before inkling analyzes buffer
+        inkling-context-size 50        ; Lines of context to include
+        inkling-display-style 'highlight) ; Use the new highlight style
 
   ;; Enable inkling for programming modes
   (add-hook 'prog-mode-hook 'inkling-mode)
@@ -335,13 +341,7 @@ when email comes in."
 
   ;; Keybindings for quick gptel access
   (global-set-key (kbd "C-c g") 'gptel)
-  (global-set-key (kbd "C-c s") 'gptel-send)
-
-  ;; Default gptel settings
-  (setq gptel-model 'claude-3-7-sonnet-20250219
-        gptel-backend claude
-        gptel-default-mode 'org-mode
-        gptel-display-buffer-action '(display-buffer-at-bottom)))
+  (global-set-key (kbd "C-c s") 'gptel-send))
 
 
 ;;; Programming Languages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
