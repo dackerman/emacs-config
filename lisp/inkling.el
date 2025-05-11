@@ -29,6 +29,11 @@
   :type 'number
   :group 'inkling)
 
+(defcustom inkling-max-edit-history 50
+  "Maximum number of edits to keep in history per buffer."
+  :type 'number
+  :group 'inkling)
+
 (defcustom inkling-context-size 50
   "Number of lines of context to include before and after point."
   :type 'number
@@ -140,6 +145,20 @@ Warning: This will store code snippets in the log file."
 (defvar inkling--active-request nil
   "Currently active LLM request.")
 
+;; Edit tracking variables
+(defvar-local inkling--edit-history nil
+  "Buffer-local history of edits for context-aware suggestions.")
+
+;; Track edit types (for more sophisticated analysis)
+(defvar inkling--edit-types
+  '(add       ; Adding new code
+    delete    ; Deleting code
+    modify    ; Modifying existing code
+    refactor  ; Rename or structural changes
+    error-fix ; Fixing an error (context from LSP)
+    )
+  "Types of edits to categorize for suggestion context.")
+
 (defvar inkling--current-suggestion nil
   "Current active suggestion text.")
 
@@ -169,6 +188,88 @@ Warning: This will store code snippets in the log file."
 
 (defvar inkling--stats-backend-usage (make-hash-table :test 'eq)
   "Hash table tracking usage per backend.")
+
+;;; Edit Tracking
+
+(cl-defstruct inkling-edit
+  type      ; Type of edit from inkling--edit-types
+  position  ; Position in buffer where edit occurred
+  before    ; Text before the change (for delete/modify)
+  after     ; Text after the change (for add/modify)
+  timestamp ; When the edit happened
+  context   ; Surrounding code context
+  lsp-data) ; Any LSP diagnostics present at the time
+
+;; Main function to record edits
+(defun inkling--record-edit (beg end length)
+  "Record an edit that occurred between BEG and END with prior LENGTH."
+  (unless (or undo-in-progress
+              (minibufferp)
+              (not inkling-mode))
+    (let* ((edit-type (inkling--determine-edit-type beg end length))
+           (before-text (when (> length 0)
+                          (buffer-substring-no-properties
+                           (max (point-min) (- beg 100))
+                           (+ beg length))))
+           (after-text (when (> (- end beg) 0)
+                         (buffer-substring-no-properties beg end)))
+           (context (inkling--get-edit-context beg end))
+           (lsp-data (when (bound-and-true-p lsp-mode)
+                       (inkling--get-lsp-diagnostics))))
+
+      ;; Create the edit record
+      (let ((edit (make-inkling-edit
+                   :type edit-type
+                   :position beg
+                   :before before-text
+                   :after after-text
+                   :timestamp (current-time)
+                   :context context
+                   :lsp-data lsp-data)))
+
+        ;; Add to history (limited to recent entries)
+        (push edit inkling--edit-history)
+        (when (> (length inkling--edit-history) inkling-max-edit-history)
+          (setcdr (nthcdr (1- inkling-max-edit-history)
+                          inkling--edit-history) nil))))))
+
+;; Helper to determine the type of edit
+(defun inkling--determine-edit-type (beg end length)
+  "Determine the type of edit that occurred."
+  (cond
+   ;; Deletion (removed text)
+   ((and (= beg end) (> length 0))
+    'delete)
+
+   ;; Addition (added text)
+   ((and (> (- end beg) 0) (= length 0))
+    'add)
+
+   ;; Modification (replaced text)
+   ((and (> (- end beg) 0) (> length 0))
+    'modify)
+
+   ;; Fallback
+   (t 'unknown)))
+
+;; Get context around an edit
+(defun inkling--get-edit-context (beg end)
+  "Get code context around the edit region."
+  (let* ((context-size 100)  ; characters of context to keep
+         (context-start (max (point-min) (- beg context-size)))
+         (context-end (min (point-max) (+ end context-size))))
+    (buffer-substring-no-properties context-start context-end)))
+
+;; Set up hooks for tracking
+(defun inkling--setup-edit-tracking ()
+  "Set up hooks to track edits in the current buffer."
+  (setq-local inkling--edit-history nil)
+  (add-hook 'after-change-functions #'inkling--record-edit nil t)
+  (add-hook 'kill-buffer-hook #'inkling--clear-edit-history nil t))
+
+(defun inkling--clear-edit-history ()
+  "Clear the edit history when buffer is killed."
+  (setq-local inkling--edit-history nil))
 
 ;;; Core functionality
 
@@ -831,17 +932,35 @@ INFO contains metadata from gptel about the response."
   :global nil
   (if inkling-mode
       (progn
+        ;; Set up edit tracking
+        (inkling--setup-edit-tracking)
+
+        ;; Set up suggestion timer
         (setq inkling--timer
               (run-with-idle-timer inkling-idle-delay t
                                    #'inkling--request-suggestions))
+
+        ;; LSP integration
         (add-hook 'lsp-diagnostics-updated-hook #'inkling--request-suggestions nil t)
+
+        ;; Company integration
         (inkling--setup-company)
+
+        ;; Initial suggestions
         (inkling--request-suggestions))
+
+    ;; Cleanup when disabled
     (when inkling--timer
       (cancel-timer inkling--timer)
       (setq inkling--timer nil))
+
+    ;; Remove hooks
     (remove-hook 'lsp-diagnostics-updated-hook #'inkling--request-suggestions t)
-    (inkling--clear-overlays)))
+    (remove-hook 'after-change-functions #'inkling--record-edit t)
+
+    ;; Clear UI elements and state
+    (inkling--clear-overlays)
+    (inkling--clear-edit-history)))
 
 ;;;###autoload
 (define-globalized-minor-mode global-inkling-mode
