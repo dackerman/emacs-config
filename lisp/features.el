@@ -286,22 +286,42 @@ when email comes in."
 
 (file-to-string "~/gemini-api-key.txt")
 
+;; Register o4-mini model for OpenAI (needed for the o4 models)
+(defvar gptel--openai-models-original nil
+  "Backup of the original gptel--openai-models list")
+
+(defun ensure-o4-mini-model ()
+  "Ensure the o4-mini model is registered with gptel."
+  (require 'gptel)
+
+  ;; Keep original list for safety
+  (unless gptel--openai-models-original
+    (setq gptel--openai-models-original (copy-tree gptel--openai-models)))
+
+  ;; Add o4-mini if not present
+  (unless (member 'o4-mini (mapcar #'car gptel--openai-models))
+    (add-to-list 'gptel--openai-models
+                '(o4-mini
+                  :description "Faster, more affordable reasoning model"
+                  :capabilities (media tool-use json url reasoning)
+                  :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp")
+                  :context-window 200 :input-cost 1.10 :output-cost 4.40
+                  :cutoff-date "2024-06"))))
+
+;; Register the o4-mini model as early as possible
+(with-eval-after-load 'gptel
+  (ensure-o4-mini-model))
+
 (defun llms ()
   (straight-use-package 'gptel)
+
+  ;; Force model registration early
+  (ensure-o4-mini-model)
 
   ;; API keys
   (setq claude-api-key (file-to-string "~/claude-api-key.txt"))
   (setq openai-api-key (file-to-string "~/openai-api-key.txt"))
   (setq gemini-api-key (file-to-string "~/gemini-api-key.txt"))
-
-  (setq o4-mini-model
-        '(o4-mini
-          :description
-          "Faster, more affordable reasoning model"
-          :capabilities (media tool-use json url reasoning)
-          :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp")
-          :context-window 200 :input-cost 1.10 :output-cost 4.40
-          :cutoff-date "2024-06"))
 
   ;; Claude backend
   (setq claude
@@ -315,7 +335,7 @@ when email comes in."
         (gptel-make-openai "OpenAI"
           :stream t
           :key openai-api-key
-          :models '(gpt-4o-mini)))
+          :models '(gpt-4o-mini o4-mini)))
 
   (setq gemini
         (gptel-make-gemini "Gemini"
@@ -329,10 +349,10 @@ when email comes in."
   ;; Load inkling for code editing
   (load-file "~/.emacs.d/lisp/inkling.el")
 
-  ;; Configure gptel and inkling settings
-  (setq ;; gptel settings
-   gptel-backend openai           ; Use OpenAI as backend
-   gptel-model 'gpt-4o-mini       ; Use GPT-4o-mini model for efficiency
+
+  (setq
+   gptel-backend openai
+   gptel-model 'o4-mini
    gptel-temperature 0.2          ; Lower temperature for more precise responses
    gptel-default-mode 'org-mode   ; Default mode for gptel buffers
    gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom

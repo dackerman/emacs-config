@@ -120,6 +120,7 @@ Warning: This will store code snippets in the log file."
 (defcustom inkling-token-cost-map
   '((claude-3-7-sonnet-20250219 . ((input . 0.0005) (output . 0.0015)))
     (gpt-4o-mini . ((input . 0.00010) (output . 0.0003)))
+    (o4-mini . ((input . 0.00110) (output . 0.0044)))  ; o4-mini has different pricing
     (gpt-4 . ((input . 0.00030) (output . 0.0006)))
     (gpt-3.5-turbo . ((input . 0.00001) (output . 0.00002)))
     (gemini-1.5-pro . ((input . 0.0001) (output . 0.0002))))
