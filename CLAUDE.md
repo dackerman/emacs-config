@@ -47,3 +47,6 @@
   - Go
   - Emacs Lisp
   - and more
+
+## Git Workflow
+- Don't add commits without confirmation

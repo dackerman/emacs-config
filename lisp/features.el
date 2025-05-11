@@ -306,7 +306,7 @@ when email comes in."
         (gptel-make-openai "OpenAI"
           :stream t
           :key openai-api-key
-          :models '(04-mini)))
+          :models '(gpt-4o-mini)))
 
   (setq gemini
         (gptel-make-gemini "Gemini"
@@ -322,16 +322,16 @@ when email comes in."
 
   ;; Configure gptel and inkling settings
   (setq ;; gptel settings
-        gptel-backend openai           ; Use OpenAI as backend
-        gptel-model 'gpt-4o-mini       ; Use GPT-4o-mini model for efficiency
-        gptel-temperature 0.2          ; Lower temperature for more precise responses
-        gptel-default-mode 'org-mode   ; Default mode for gptel buffers
-        gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom
+   gptel-backend openai           ; Use OpenAI as backend
+   gptel-model 'gpt-4o-mini       ; Use GPT-4o-mini model for efficiency
+   gptel-temperature 0.2          ; Lower temperature for more precise responses
+   gptel-default-mode 'org-mode   ; Default mode for gptel buffers
+   gptel-display-buffer-action '(display-buffer-at-bottom) ; Display at bottom
 
-        ;; inkling settings
-        inkling-idle-delay 0.8         ; Delay before inkling analyzes buffer
-        inkling-context-size 50        ; Lines of context to include
-        inkling-display-style 'highlight) ; Use the new highlight style
+   ;; inkling settings
+   inkling-idle-delay 0.8         ; Delay before inkling analyzes buffer
+   inkling-context-size 50        ; Lines of context to include
+   inkling-display-style 'highlight) ; Use the new highlight style
 
   ;; Enable inkling for programming modes
   (add-hook 'prog-mode-hook 'inkling-mode)
