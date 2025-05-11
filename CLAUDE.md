@@ -49,4 +49,4 @@
   - and more
 
 ## Git Workflow
-- Don't add commits without confirmation
+- Don't automatically add commits without confirmation from the user! Always ask before committing.
