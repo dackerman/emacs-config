@@ -294,6 +294,15 @@ when email comes in."
   (setq openai-api-key (file-to-string "~/openai-api-key.txt"))
   (setq gemini-api-key (file-to-string "~/gemini-api-key.txt"))
 
+  (setq o4-mini-model
+        '(o4-mini
+          :description
+          "Faster, more affordable reasoning model"
+          :capabilities (media tool-use json url reasoning)
+          :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp")
+          :context-window 200 :input-cost 1.10 :output-cost 4.40
+          :cutoff-date "2024-06"))
+
   ;; Claude backend
   (setq claude
         (gptel-make-anthropic "Claude"
