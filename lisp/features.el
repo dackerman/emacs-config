@@ -301,12 +301,12 @@ when email comes in."
   ;; Add o4-mini if not present
   (unless (member 'o4-mini (mapcar #'car gptel--openai-models))
     (add-to-list 'gptel--openai-models
-                '(o4-mini
-                  :description "Faster, more affordable reasoning model"
-                  :capabilities (media tool-use json url reasoning)
-                  :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp")
-                  :context-window 200 :input-cost 1.10 :output-cost 4.40
-                  :cutoff-date "2024-06"))))
+                 '(o4-mini
+                   :description "Faster, more affordable reasoning model"
+                   :capabilities (media tool-use json url reasoning)
+                   :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp")
+                   :context-window 200 :input-cost 1.10 :output-cost 4.40
+                   :cutoff-date "2024-06"))))
 
 ;; Register the o4-mini model as early as possible
 (with-eval-after-load 'gptel
@@ -364,7 +364,7 @@ when email comes in."
    inkling-display-style 'highlight) ; Use the new highlight style
 
   ;; Enable inkling for programming modes
-  (add-hook 'prog-mode-hook 'inkling-mode)
+                                        ;(add-hook 'prog-mode-hook 'inkling-mode)
 
   ;; Global key to toggle inkling mode
   (global-set-key (kbd "C-c C-a") 'inkling-mode)
