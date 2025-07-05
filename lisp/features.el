@@ -33,7 +33,15 @@
 ;;; Look and Feel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun look-and-feel ()
   (straight-use-package 'dracula-theme)
-  (load-theme 'dracula t)
+  
+  ;; Use different themes for GUI vs terminal
+  (if (display-graphic-p)
+      ;; GUI mode - use dracula theme
+      (load-theme 'dracula t)
+    ;; Terminal mode - use a dark terminal-friendly theme
+    (progn
+      (straight-use-package 'modus-themes)
+      (load-theme 'modus-vivendi t)))
 
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
